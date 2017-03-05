@@ -24,7 +24,7 @@ enum DATA_TYPES{
 };
 
 
-/*
+
 struct _GROUP_DATA{
    int8_t         idx;
    int8_t        type;
@@ -34,7 +34,6 @@ struct _GROUP_DATA{
    float          val;
 };
 
-*/
 
 
 /*
