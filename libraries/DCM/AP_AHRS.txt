@@ -1,0 +1,761 @@
+//#include "AP_AHRS.h"
+void  
+AP_AHRS::Update()
+{
+	if(last_startup_Msec == 0)
+		last_startup_Msec = millis();
+		
+	uint32_t t_now = millis();
+    uint32_t dt	   = t_now - update_Msec;
+	G_dt = (float)dt * 0.001f; 
+	update_Msec  = t_now;
+	
+	if(G_dt > 0.2f)
+	{
+		_ra_sum.zero();
+		_ra_deltat = 0;
+		return;
+	}
+		
+	update_adc();	
+	update_matrix();
+	normalise();
+	drift_correction();
+	check_matrix();
+	euler_angles();
+	
+	wind_estimate();
+}
+
+void 
+AP_AHRS::update_adc()
+{
+	if(_hil_mode)
+		return;
+		
+	AN[0]  = _imu.xgyro;
+	AN[1]  = _imu.ygyro;
+	AN[2]  = _imu.zgyro;
+
+	AN[3]  = _imu.xacc;
+	AN[4]  = _imu.yacc;
+	AN[5]  = _imu.zacc;
+
+	AN[6]  = _imu.xmag;
+	AN[7]  = _imu.ymag;
+	AN[8]  = _imu.zmag;	
+}
+
+float 
+AP_AHRS:: return_vector(int i)
+{
+	float v;
+	v = (AN[i] - AN_OFFSETS[i]) * SENSOR_SIGN[i];
+	return v;
+}
+
+void 
+AP_AHRS::update_matrix()
+{ 
+  gyro_vector.x  = return_vector(0);
+  gyro_vector.y  = return_vector(1);
+  gyro_vector.z  = return_vector(2);
+  
+  accel_vector.x = return_vector(3);
+  accel_vector.y = return_vector(4);
+  accel_vector.z = return_vector(5);
+    
+  gyro_vector 	 = vector3f(GYRO_SCALER(gyro_vector.x),   GYRO_SCALER(gyro_vector.y),   GYRO_SCALER(gyro_vector.z));      // rad/sec
+  accel_vector 	 = vector3f(ACCELX_SCALER(accel_vector.x), ACCELY_SCALER(accel_vector.y), ACCELZ_SCALER(accel_vector.z)); // m/sec2
+  
+  omega_vector.zero();
+  omega_vector 	 = gyro_vector  + omega_Ivector;  
+  dcmMatrix.rotate((omega_vector + omega_Pvector + omega_yaw_P) * G_dt);
+}
+
+bool 
+AP_AHRS::renormalise(vector3f const &a, vector3f &result)
+{
+  float renorm_val;
+  
+  // Normalisation to get unit vectors
+   renorm_val  = 1.0f/a.magnitude();
+   
+   if(!(renorm_val < 2.0f && renorm_val > 0.5f))
+   {
+      // outside of range values
+      if(!(renorm_val < 1.0e6f && renorm_val > 1.0e-6f))
+      {
+        return false;
+      }
+   }   
+   result = a * renorm_val;
+   return true;
+}
+
+void 
+AP_AHRS::normalise()
+{
+  // Correct for othorgonality conditions
+  vector3f x_orth, y_orth, z_orth;
+  float error;
+ 
+  error  = dcmMatrix.a * dcmMatrix.b;
+  x_orth = dcmMatrix.a - (dcmMatrix.b * (0.5f * error));
+  y_orth = dcmMatrix.b - (dcmMatrix.a * (0.5f * error));
+  z_orth = x_orth % y_orth;
+  
+  if(!renormalise(x_orth, dcmMatrix.a) ||
+     !renormalise(y_orth, dcmMatrix.b) ||
+     !renormalise(z_orth, dcmMatrix.c)){
+           AP_AHRS::reset_dcm(true);
+           last_failure_Msec = millis();
+     }
+}
+
+float 
+AP_AHRS::calculate_heading(float _roll, float _pitch)
+{	  
+	float Heading; 
+	float Head_X;
+	float Head_Y;
+	float cos_roll;
+	float sin_roll;
+	float cos_pitch;
+	float sin_pitch;
+	
+	// offsets calculated from lightweight min-max method
+    float scales[3]  = {0.93, 0.95, 1.12};	  
+	
+	// calculate 
+	mag_vector.x = return_vector(6) * scales[0];
+	mag_vector.y = return_vector(7) * scales[1];
+	mag_vector.z = return_vector(8) * scales[2];
+	  
+	// find adjust cosines and sines
+	cos_roll  = cos(_roll);
+	sin_roll  = sin(_roll);
+	cos_pitch = cos(_pitch);
+	sin_pitch = sin(_pitch);
+
+	// calculate the heading rotated to r and p and rotate the corresponding earth vector by -yaw to match this.
+	Head_X  = mag_vector.x * cos_pitch  +  mag_vector.y * sin_roll * sin_pitch  +  mag_vector.z *cos_roll * sin_pitch;
+	Head_Y  = mag_vector.y * cos_roll   -  mag_vector.z * sin_roll;
+	Heading = atan2(-Head_Y,Head_X);
+
+	// Declination correction (if supplied)
+	if( MAGNETIC_DECLINATION != 0 ) 
+	{
+	  if(_hil_mode)
+		Heading = Heading + ToRad(16);	// KSEA Airpot
+	  else
+	  	Heading = Heading + ToRad(MAGNETIC_DECLINATION); // KIbaha
+	  if (Heading > M_PI)    // Angle normalization (-180 deg, 180 deg)
+		  Heading -= (2.0 * M_PI);
+	  else if (Heading < -M_PI)
+		  Heading += (2.0 * M_PI);
+	}
+	
+	// limit heading to +/- 180 degrees
+	Heading  = constrain_float(Heading, -M_PI, M_PI);
+
+	// Optimization for external DCM use. Calculate normalized components
+	Heading_X = cos(Heading);
+	Heading_Y = sin(Heading);
+
+	return Heading;	
+}
+
+
+float 
+AP_AHRS::yaw_error_compass()
+{
+	// calculate mag vector in earth frame
+	Vector2f rb = dcmMatrix.mulXY(mag_vector);
+	
+	if(rb.length() < FLT_EPSILON){
+		return 0.0f;
+	}
+	
+	rb.normalise();
+
+	if(rb.is_inf()){
+		return 0.0f;
+	}
+
+	
+	float declination = ToRad(MAGNETIC_DECLINATION);
+	
+	if(_hil_mode)
+		declination = ToRad(16); // Magnetic Declination of SEATTLE -KSEA
+
+	Vector2f _mag_earth;
+	_mag_earth.x = cos(declination);
+	_mag_earth.y = sin(declination);
+
+	//  equivalent to sin of angle from rb to _mag_earth since both rb and mag_earth are unit vectors
+	return rb % _mag_earth; 
+}
+
+float 
+AP_AHRS::_P_gain(float _spin_rate) // spinnrate in radians/sec as omega.length
+{
+	if(_spin_rate < ToRad(50))
+		return 1.0f;
+	if(_spin_rate > ToRad(500))
+		return 10.0f;
+	return _spin_rate/ToRad(50);
+}
+
+float 
+AP_AHRS::_yaw_gain(void) const
+{
+	float vdot_ef = sqrt(_accel_ef.x * _accel_ef.x + _accel_ef.y * _accel_ef.y);	
+	if(vdot_ef <= 4.0f)
+		return 0.2f*(4.5f - vdot_ef);
+	return 0.1f;
+}
+
+bool  
+AP_AHRS::use_fast_gains(void)const
+{
+	return (millis() - last_startup_Msec) < 15000U;
+}
+
+bool  
+AP_AHRS::use_compass()
+{
+	if(!_gps.have_gps())
+		return true;
+		
+	if(_gps.groundspeed() < 3)
+		return true;
+		
+	// if yaw differs from ground course by more than 45 degress
+	// and estimated wind is less than 80% of ground speed switch to GPS
+	// very abd compass offsets
+	float error = fabs(wrap_180_deg(_gps.heading() - ToDeg(yaw)));
+	if(error > 45.0f && wind.length() < _gps.groundspeed() * 0.8f)
+	{
+		// 2 seconds since we had a descent heading
+		if(millis() - _last_consistent_heading > 2000)
+		{
+			return false;
+		}
+	}
+	else
+	{
+		_last_consistent_heading = millis();
+	}
+	
+	// if all the above didnt catch then just use heading
+	return true;
+}
+
+
+// drift correction using gps or compass
+// omega_yaw_p vector is produced here
+void 
+AP_AHRS::drift_correction_yaw(void)
+{
+	float yaw_error;
+	float yaw_deltat;
+	bool new_value = false;	
+	uint32_t t_now = millis();
+	if(AP_AHRS::use_compass())
+	{
+		// use compass
+		if(t_now - heading_update_Msec >= 100)
+		{
+			yaw_deltat = (float)(t_now - heading_update_Msec) * 0.001f;
+			heading_update_Msec = t_now;
+
+			// calculate heading
+			float heading = calculate_heading(roll, pitch);
+			
+			dcmMatrix.from_euler(roll, pitch, heading);	
+
+			// zero omega_yaw_P
+			omega_yaw_P.zero();
+			
+			// get the yaw error of the compass in the earth frame
+			yaw_error = yaw_error_compass();
+			
+			new_value = true;
+			
+			_gps_last_update = _gps.last_time_fix_ms();
+		 }
+	 }
+	 else if(_gps.have_gps())
+	 {
+		if(_gps.last_time_fix_ms() != _gps_last_update &&
+		   _gps.groundspeed() >= 3.0f){
+				yaw_deltat = static_cast<float>((_gps.last_time_fix_ms() -_gps_last_update) * 1.0e-3f);
+				_gps_last_update = _gps.last_time_fix_ms();
+				new_value = true;
+		   }
+		   
+		   float gps_course_rad = wrap_180_deg(_gps.heading());
+		   gps_course_rad = ToRad(gps_course_rad);
+		   float yaw_error_rad = wrap_PI(gps_course_rad - yaw);
+		   yaw_error = sin(yaw_error_rad); // from yaw to gps
+		   
+		   // if 15 seconds since last gps update -> consiredable gyro drift
+		   // if our speed is more than 9m/s and our yaw diff is more than 60 degrees (Bungee lauches ) were rapid accelerations cause significant gps heading changes
+		   if(yaw_deltat > 15.0f ||
+			  (_gps.groundspeed() >= 9.0f && fabs(yaw_error_rad) >= 1.047f) ){
+				dcmMatrix.from_euler(roll, pitch, gps_course_rad);
+				omega_yaw_P.zero();
+				yaw_error = 0.0f;
+		   }
+	 }
+	 
+	 if(!new_value)
+	 {
+		omega_yaw_P = omega_yaw_P * 0.97; // decay omega yaw p from lack of new value
+		return;
+	 }
+	 
+	 // workout the amout we need to rotate around body z-axis to correct for drift
+	 // remember yaw_error is in earth frame, erro_z has to be rotation in body frame
+	 float error_z = dcmMatrix.c.z * yaw_error;
+	 
+	 // scale kp_yaw by spin rate
+	 float _spin_rate = omega_vector.length();
+	 
+	 if(Kp_Yaw < 0.05f)
+		Kp_Yaw = 0.05f;
+	 
+	 omega_yaw_P.z 	= error_z * _P_gain(_spin_rate) * Kp_Yaw * _yaw_gain();
+	 
+	 if(use_fast_gains())
+	 {
+		omega_yaw_P.z *= 8.0f;
+	 }
+	 
+	 if(yaw_deltat < 2.0f  && _spin_rate < ToRad(SPIN_RATE_LIMIT))
+	 {
+		omega_I_sumvector.z  += error_z * Ki_Yaw * yaw_deltat;
+	 }
+}
+
+vector3f AP_AHRS::_ra_delayed(vector3f new_ra)
+{
+	// delays the acceleration by 200 ms to match the UBX delay.
+	vector3f delayed_vector = _ra_delayed_buffer;
+	_ra_delayed_buffer  = new_ra;
+	if(delayed_vector.is_zero())// initial start.
+		return new_ra;	
+	return delayed_vector;
+}
+
+void AP_AHRS::drift_correction()
+{
+	vector3f velocity; 
+	uint32_t last_correction_time;
+	
+	// How Much Should we rotate around the Z-Axis so that the True North is Aligned with Magnetic North + Declination
+	// corrects the longterm W_I.z - term
+	drift_correction_yaw();
+	
+
+	// rotate accelerometer (mss) into earth frame and integrate between 0 - 200 ms i.e. _ra_deltat = 0 to _ra_deltat = 200
+	_accel_ef   = dcmMatrix * accel_vector; 
+	_ra_sum     = _ra_sum + _accel_ef * G_dt;			 
+	_ra_deltat += G_dt; 
+
+    
+	// checks
+	// 1. No GPS | Fix < 3D | sats < 6
+	// Perform normal fixed accelerometer correction
+	// estimate ground velocity based on wind estimates.
+	if(!_gps.have_gps() ||
+		_gps.status()   < AP_GPS::GPS_FIX_TYPE_3D ||
+		_gps.num_sats() < 6)
+	{		
+		if(_ra_deltat < 0.2f)
+			return;
+		
+		float airspeed; // since i dont have GPS, i will take the raw sensor speed
+		
+		if(_airspeed->enabled())
+			airspeed = _airspeed->get_airspeed();
+		else
+			airspeed = _last_airspeed;
+
+	    velocity  = dcmMatrix.colx() * airspeed;
+		
+		velocity  = velocity + wind;
+		
+		_have_gps_lock = false;
+		
+		last_correction_time  = millis(); // last time since we corrected anything with accelerometer
+	}
+	else
+	{	
+		if(_gps.last_time_fix_ms() == _ra_sum_start)
+		{
+			return; // no new data nothing more to do
+		}
+		
+		velocity = _gps.velocity();
+		
+		if(!_have_gps_lock)
+		{
+			_last_velocity = velocity;
+		}
+		_have_gps_lock = true;
+		
+		// estimate airspeed
+		vector3f airspeed = velocity - wind;
+		airspeed.z = 0.0f;
+		_last_airspeed = airspeed.length();		
+		last_correction_time =_gps.last_time_fix_ms();
+	}
+	
+	
+	// update last latitude and longitude
+	// checks:
+	// 1. If we have GPS then update with GPS lon and latitude and some form of fix.
+	// 2. If no GPS then update using DeadReeckoning.
+	if(_gps.have_gps())
+	{
+		_last_lat = _gps.location().lat;
+		_last_lon = _gps.location().lon;
+		_position_offset_north = 0;
+		_position_offset_east  = 0;
+		_have_position = true;
+	}
+	else
+	{
+		// updates based on dead-reckoning
+		_have_position = false;
+		_position_offset_north += velocity.x * _ra_deltat;
+		_position_offset_east  += velocity.y * _ra_deltat;
+	}
+
+	
+	// First Time
+	if(_ra_sum_start == 0)
+	{
+		_ra_sum_start = last_correction_time;
+		_last_velocity = velocity;
+		return;
+	}
+	
+	vector3f GA_e;
+	vector3f GA_b;
+	
+	#if NED
+	GA_e = vector3f(0.0f,0.0f,-1.0f); // NED	
+	#else
+	GA_e = vector3f(0.0f,0.0f, 1.0f); // SWU
+	#endif
+	
+	if(_ra_deltat <= 0)
+		return;	
+	
+	// centrifugal correction as well as forward and back accelerations
+	float _ra_scale = 1.0f/(_ra_deltat * GRAVITY_MSS); // used to scale _ra_sum to G's
+	float gps_gain  = 1.0f;
+	float v_scale   = gps_gain * _ra_scale;
+	bool using_gps_correction = false;					// This helps delay the _ra_sum to match the gps delay signal.
+	if(_gps.have_gps() && _have_gps_lock)
+	{
+		vector3f vdelta = (velocity - _last_velocity) * v_scale;
+		GA_e = GA_e + vdelta;
+		
+		GA_e.normalise();
+		
+		if(GA_e.is_inf()){
+			last_failure_Msec = millis();
+			return;
+		}
+		using_gps_correction = true;
+	}
+	
+	// Here _ra_sum = E(R.Ab.dt)
+	// converted to _ra_sum = E(R.Ab.dt)/integration_time in G's
+	_ra_sum = _ra_sum * _ra_scale;   
+	
+	if(using_gps_correction)
+	{
+		GA_b = _ra_delayed(_ra_sum);
+	}else
+	{
+		GA_b  = _ra_sum; 	
+	}
+	
+	if(GA_b.is_zero())
+	return;
+	
+	GA_b.normalise();
+	
+	if(GA_b.is_inf())
+	return;
+	
+
+	error_RollPitch = GA_b % GA_e;  //error in earth frame proportional to the sin of the angle from GA_b -> GA_e
+  
+    // GPS GAin Stuff..
+	// since we have a magnetometer then we remove the yaw control effect
+	if(AP_AHRS::use_compass())
+	{
+		if(_gps.have_gps())
+		{
+			error_RollPitch.z = sin(fabs(roll));
+		}else{
+			error_RollPitch.z = 0.0f;
+		}
+	}
+	
+	// transpose back error in body frame so that it can added with the gyro rates
+	error_RollPitch   = dcmMatrix.mul_transpose(error_RollPitch);
+	
+	if(error_RollPitch.is_nan() || error_RollPitch.is_inf())
+	{
+		check_matrix();
+		last_failure_Msec = millis();
+		return;
+	}
+	
+  float spin_rate   = omega_vector.length(); 		// rad/sec
+  
+  omega_Pvector     = error_RollPitch 	 * (_P_gain(spin_rate)  * Kp_RollPitch); 
+  
+  if(use_fast_gains())
+  {
+	omega_Pvector	= omega_Pvector * 8.0f;
+  }
+  
+  if(_gps.status() >= AP_GPS::GPS_FIX_TYPE_2D &&
+     _gps.groundspeed() < 3.0f &&
+	 accel_vector.x >= 7.0f &&
+	 ToDeg(pitch) > -3.0f && ToDeg(pitch) < 3.0f )
+	 {
+		omega_Pvector = omega_Pvector * 0.5f;
+	 }
+  
+  // integrator is for when spin rate is below max allowed values
+  if(spin_rate < ToRad(SPIN_RATE_LIMIT))
+  {
+	  omega_I_sumvector = omega_I_sumvector  + (error_RollPitch * (Ki_RollPitch * _ra_deltat));
+	  omega_I_sum_time  += _ra_deltat;
+  }
+  
+  // restart omega_Isum after every five seconds
+  if(omega_I_sum_time >= 5)
+  {
+	float _limit_gyros	= 0.5f; // 0.5deg/sec/minute divided by 60 to get the change per second -> change allowable 
+	float change_limit  = ToRad(_limit_gyros) * omega_I_sum_time; // no need to multiply by 2
+	omega_I_sumvector.x = constrain_float(omega_I_sumvector.x, -change_limit, change_limit);
+	omega_I_sumvector.y = constrain_float(omega_I_sumvector.y, -change_limit, change_limit);
+	omega_I_sumvector.z = constrain_float(omega_I_sumvector.z, -change_limit, change_limit);
+	omega_Ivector 		= omega_Ivector + omega_I_sumvector;
+	omega_I_sumvector.zero();
+	omega_I_sum_time = 0;
+  }
+  
+  _ra_deltat = 0;
+  _ra_sum.zero();
+  _ra_sum_start = last_correction_time;
+  
+  // velocity in here
+  _last_velocity = velocity;
+}
+
+void AP_AHRS::reset_dcm(const boolean recover_eulers)
+{
+   omega_vector.zero();
+   omega_Pvector.zero();
+   omega_Ivector.zero();
+   omega_yaw_P.zero();
+   
+   if(recover_eulers && 
+      !isnan(roll) &&
+      !isnan(pitch) && 
+      !isnan(yaw)){
+      dcmMatrix.from_euler(roll, pitch, yaw);
+   }
+   else
+   {
+     dcmMatrix.identity();
+   }
+   last_startup_Msec = millis();
+}
+
+void AP_AHRS::check_matrix(void)
+{
+  if(dcmMatrix.is_nan())
+  {
+    AP_AHRS::reset_dcm(true);
+  }
+  
+  if(!(dcmMatrix.c.x < 1.0f && dcmMatrix.c.x > -1.0f))
+  {
+    normalise();
+    
+    if(dcmMatrix.is_nan() || fabs(dcmMatrix.c.x) > 10)
+    {
+      // normalisation didnt fix the error
+      AP_AHRS::reset_dcm(true);
+    }
+  }
+}
+
+void AP_AHRS::euler_angles()
+{
+    pitch 	  = -asin(dcmMatrix.c.x);                 // rad  -pi/2 | pi/2
+    roll      = atan2(dcmMatrix.c.y, dcmMatrix.c.z);  // rad  -pi 	| pi
+    yaw    	  = atan2(dcmMatrix.b.x, dcmMatrix.a.x);  // rad  -pi 	| pi
+    
+    rollrate  = omega_vector.x;  // rad/sec
+    pitchrate = omega_vector.y;  // rad/sec
+    yawrate   = omega_vector.z;  // rad/sec
+}
+
+
+void AP_AHRS::update_offset()
+{
+	update_adc();
+	
+	if(!pass_through)
+	{
+		for(int i = 0; i<=8; i++)
+			AN_OFFSETS[i] = AN[i];
+		pass_through = !pass_through;
+	}
+	
+	for(int i = 0; i<=8; i++){ 
+		AN_OFFSETS[i] = AN[i];
+	}
+	
+	// AN_OFFSETS[5] -= GRAVITY_4G * SENSOR_SIGN[5];
+
+	// These are the calibrated gaussian offsets
+	#if !SET_ACCEL
+	AN_OFFSETS[3] = 333.72;
+	AN_OFFSETS[4] = 17.31;
+	AN_OFFSETS[5] = -525.59;
+	#endif		
+	
+	#if !SET_MAG
+	//float mag_offsets[3]  = {-97.5, -125.5, 130.00};
+	AN_OFFSETS[6] = 0.0f;
+	AN_OFFSETS[7] = 0.0f;
+	AN_OFFSETS[8] = 0.0f;
+	#endif
+}
+
+
+void AP_AHRS::wind_estimate(void)
+{
+ 
+  vector3f gSpeed = _last_velocity;
+  vector3f fusDir = dcmMatrix.colx();
+  vector3f delta_fusDir = fusDir - fusDir_old;
+  
+  
+  uint32_t now    = millis();
+  if(now - _last_wind_time > 10000)
+  {
+	_last_wind_time = now;
+	fusDir_old	    = fusDir;
+	gSpeed_old 	    = gSpeed;
+	return;
+  }
+  
+  float fusMag    = delta_fusDir.magnitude();
+  if(fusMag > 0.2f)
+  {
+    vector3f delta_gSpeed = gSpeed - gSpeed_old;
+    float gSpdMag 		  = delta_gSpeed.magnitude();
+  
+    float est_speed = gSpdMag/fusMag;
+
+    float theta      = atan2(delta_gSpeed.y, delta_gSpeed.x) - atan2(delta_fusDir.y, delta_fusDir.x); 
+    //float sintheta = (fusDir_unit.x * gSpeed_unit.y - fusDir_unit.y * gSpeed_unit.x)/(fusDir_unit.x * fusDir_unit.x + fusDir_unit.y * fusDir_unit.y); // dont use unit vectors | use actual vectors
+    //float theta    = asin(sintheta);
+    float sintheta   = sin(theta);
+    float costheta   = cos(theta);
+    
+    vector3f _wind = vector3f();
+    _wind.x = ((gSpeed.x + gSpeed_old.x) - est_speed *((cos(theta)*(fusDir.x + fusDir_old.x)) - sin(theta) * (fusDir.y + fusDir_old.y))) * 0.5;
+    _wind.y = ((gSpeed.y + gSpeed_old.y) - est_speed *((sin(theta)*(fusDir.x + fusDir_old.x)) + cos(theta) * (fusDir.y + fusDir_old.y))) * 0.5;
+    _wind.z = ((gSpeed.z + gSpeed_old.z) - est_speed *(fusDir.z + fusDir_old.z)) * 0.5;
+    
+    if(_wind.magnitude() < wind.magnitude() + 20)
+    {
+      wind = wind * 0.95f + _wind * 0.05f;
+    }
+    
+    gSpeed_old      = gSpeed;
+    fusDir_old      = fusDir;
+	
+	_last_wind_time = now;
+  }
+  else if(now - _last_wind_time > 2000 &&	_airspeed->enabled())
+  {// when flyin straight
+	vector3f _airspeed_ef = dcmMatrix.colx() * _airspeed->get_airspeed();
+	vector3f _wind	= gSpeed - _airspeed_ef;
+	wind = wind * 0.92f + _wind * 0.08f;
+  }
+}
+
+float AP_AHRS::airspeed_estimate()
+{
+	bool ret = true;
+	
+	if(_airspeed->enabled()){
+		ret = true;
+		return _airspeed->get_airspeed();
+	}	
+	
+	if(_gps.have_gps()){
+		ret = true;
+		return constrain_float(_last_airspeed, _gps.groundspeed() - 7.5f, _gps.groundspeed() + 7.5f);		
+	}
+
+	if(!ret){
+		ret = true;
+		return constrain_float(_last_airspeed, 3.0f, 25.0f);
+	}		
+}
+
+void  AP_AHRS::setHil(hil_ahrs &_hil_ahrs)
+{
+	_hil_mode = true;
+	
+	for(int i = 0; i<=8; i++)
+	{
+		AN_OFFSETS[i]  = 0; 	// Offsets are zero 
+		SENSOR_SIGN[i] =  1;    // NED on PC already
+	}
+	
+	AN[0]  = _hil_ahrs.rollrate  / ToRad(Gyro_Gain); // LSB xgyro value
+	AN[1]  = _hil_ahrs.pitchrate / ToRad(Gyro_Gain); // LSB ygyro value
+	AN[2]  = _hil_ahrs.yawrate   / ToRad(Gyro_Gain); // LSB zgyro value
+
+	AN[3]  = _hil_ahrs.xacc * (AccelX_Gain/9.81f);
+	AN[4]  = _hil_ahrs.yacc * (AccelY_Gain/9.81f);
+	AN[5]  = _hil_ahrs.zacc * (AccelZ_Gain/9.81f);
+
+	// Update magvector from local magnetic field and declination angle.
+	matrix3f R;
+	vector3f B_earth;
+	vector3f B_body;
+	B_earth.x = 0.53 * cos(ToRad(67));
+	B_earth.y = 0.0f;
+	B_earth.z = 0.53 * sin(ToRad(67));		
+	R.from_euler(_hil_ahrs.roll, _hil_ahrs.pitch, _hil_ahrs.yaw);
+	B_body = R.mul_transpose(B_earth);
+
+	AN[6]  = B_body.x;
+	AN[7]  = B_body.y;
+	AN[8]  = B_body.z;	
+}
+
+
+
+
+

@@ -1,0 +1,7 @@
+AP_HgtFilter	KEYWORD1
+AP_hgtfilter	LITERAL1
+height	KEYWORD2
+climbrate	KEYWORD2
+
+AP_HgtFilter_AQ	KEYWORD1
+AP_hgtfilter_aq	LITERAL1

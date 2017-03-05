@@ -1,0 +1,909 @@
+/* This is the style sheet for the main text frame for the general set	*/
+/* of pages in this site												*/
+
+/* First let's take care of any tag specific styles...					*/
+BODY {
+	color : #000000;
+	Background-color : #f0f0f0;
+	font-family : arial, "Times New Roman";
+	font-size : 12pt;
+}
+
+a {
+	text-decoration : None;
+	font-weight:bold;
+}
+
+a.Page_Button_Hover:hover {
+	color : #000000;
+}
+
+a:link {
+	color : #0000cc;
+}
+
+a:visited {
+	color : #0000cc;
+}
+
+a:hover {
+	Color : #FF00FF;
+}
+
+/* Now lets do the styles for any classes  we might happen to have...  	*/	
+
+.Center {
+	text-align : center;
+}
+
+.FullCenter {
+    width : 100%;
+	text-align : center;
+}
+
+.Example {
+	padding-left : 25px;
+	padding-right : 25px;
+}
+
+.NSExample {
+	background-color: #CCFFFF;
+	
+}
+
+.Indent	{
+		padding-left : 25px;
+}
+
+.Indent2 {
+		padding-left : 50px;
+}
+
+.Indent3 {
+		padding-left : 25px;
+		padding-right : 25px;
+}
+
+.Indent4 {
+		padding-left : 50px;
+		padding-right : 50px;
+}
+
+.Nav {
+	font-family : Times New Roman;
+	font-size : smaller;
+	text-decoration : none;
+}
+
+.EqnNo {
+	font-family : helvetica, arial;
+	font-size : 10pt;
+}
+
+.SelectedItem
+{
+    background-color: #FFFFFF;
+    border: 1px solid #CCCCCC;
+    padding-right: 2px;
+}
+
+.Smaller {
+	font-size : smaller;
+}
+
+.SmallerBold {
+	font-size : smaller;
+	font-weight : bold;
+}
+
+.Larger {
+	font-size : larger;
+}
+
+.LargerBold {
+	font-size : larger;
+	font-weight : bold;
+}
+
+.SmallText {
+	font-size : 8px;
+}
+
+.MediumText {
+	font-size : 10px;
+}
+
+.LargeText {
+	font-size : 12px;
+}
+
+.Math {
+	font-family : arial;
+}
+
+.MathCenter {
+	font-family : arial;
+	text-align : center;
+}
+
+.Variable {
+	font-family : Times New Roman;
+	font-style : italic;
+}
+
+.Hidden 
+{
+	display : none;
+}
+
+.SmallerHidden 
+{
+	font-size : smaller;
+	display : none;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+
+
+
+
+.Window_Heading {
+	font-weight:bold;
+	font-size:24px;
+	color:#000000;
+    float : left;
+}
+
+.Window_Search {
+	float : right;
+    width : 350px;
+    height : 20px;
+    Background-color : #f0f0f0;
+}
+
+.Window_Search_Results {
+    border: 1px solid #000000;
+    width : 95%;
+    background-color : #FFFFFF;
+}
+
+.Window_Main {
+    clear: both;
+    width: 98%;
+}
+
+.Menu_Main {
+    margin-top : 5px;
+    margin-left : 25px;
+}
+
+.Content_Main {
+    padding: 5px;
+    margin-bottom: 5px;
+    background: #FFFFFF;
+    border-left: 2px solid #000000;
+    border-right: 2px solid #000000;
+    border-top: 2px solid #000000;
+    border-bottom: 2px solid #000000;
+}
+
+.Welcome_Head {
+	color : #000000;
+	background : #FFFFFF;
+	font-weight :bold;
+	text-transform : uppercase;
+	text-align: center;
+	margin-left : 5px;
+	margin-right : 5px;
+	padding-left : 5px;
+	padding-top : 3px;
+	padding-bottom : 3px;
+	border-bottom : 1px solid #000000;
+}
+
+.Welcome_Items{
+	color :	#000000;
+	background : #FFFFFF;
+	padding-top : 10px;
+	padding-left : 5px;
+	padding-right : 5px;
+	padding-bottom : 5px;
+}
+
+.FloatLeft {
+    float: left;
+}
+
+.FloatRight {
+    float: right;
+}
+
+.ClearFloat {
+    clear: both;
+}
+
+.TopAlign {
+    vertical-align: top;
+}
+
+a.CloseMenuLink:link, a.CloseMenuLink:hover, a.CloseMenuLink:visited {
+    color : #FF0000;
+    text-align : right;
+}
+
+.CloseMenu {
+    color: #FF0000;
+    text-align: right;
+}
+
+.Menu_Text {
+    float : left;
+    margin-right : 2px;
+}
+
+.Menu_Mobile {
+    height: 35px;
+}
+
+.Menu_Desktop {
+    height: 20px;
+}
+
+.Menu_Item_Left {
+    border-color: #FF0000;
+    border-width: 3px 1px 3px 3px;
+    border-style: solid;
+    padding: 5px 5px 2px 5px;
+    background: #FFC6C6;
+    font-weight: bold;
+    color: #0000cc;
+}
+
+.Menu_Item {
+    border-color: #FF0000;
+    border-width: 3px 1px 3px 1px;
+    border-style: solid;
+    padding: 5px 5px 2px 5px;
+    background: #FFC6C6;
+    font-weight: bold;
+    color: #0000cc;
+}
+
+.Menu_Item_Right {
+    border-color: #FF0000;
+    border-width: 3px 3px 3px 1px;
+    border-style: solid;
+    padding: 5px 5px 2px 5px;
+    background: #FFC6C6;
+    font-weight: bold;
+    color:#0000cc;
+}
+
+.Menu_Item_Hover_Left {
+    border-color: #000000;
+    border-width: 2px 1px 0px 2px;
+    border-style: solid;
+    padding: 5px 5px 2px 5px;
+    background: #FFFFFF;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ff00ff;
+}
+
+.Menu_Item_Hover {
+    border-color: #000000;
+    border-width: 2px 1px 0px 1px;
+    border-style: solid;
+    padding: 5px 5px 2px 5px;
+    background: #FFFFFF;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ff00ff;
+}
+
+.Menu_Item_Hover_Right {
+    border-color: #000000;
+    border-width: 2px 2px 0px 1px;
+    border-style: solid;
+    padding: 5px 5px 2px 5px;
+    background: #FFFFFF;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ff00ff;
+}
+
+.Menu_Content {
+    border-style: solid;
+    border-width: 0px 3px 3px 3px;
+    border-color: #000000 #FF0000 #FF0000 #FF0000;
+    position: absolute;
+    top: 24px;
+    left: 77px;
+    padding: 5px; 
+    background: #FFFFFF;
+    display: none;
+    overflow: auto;
+    z-index: 200;
+}
+
+.Menu_Content_Selection {
+    border: 1px solid #FF0000;
+    background: #D6D6D6;
+    color: #D6D6D6;
+    font-weight: bold;
+}
+
+.Current_Location {
+    border: 1px solid #FF0000;
+    background: #D6D6D6;
+    padding : 2px;
+}
+
+.Download_Menu {
+    line-height : 25px;
+}
+
+.Extra_Section_Link {
+    color: #FFFFFF;
+}
+
+.SiteMap_MainTitle {
+    font-weight: bold;
+    text-decoration: underline;
+    text-transform : uppercase;
+}
+
+.SiteMap_ClassTitle {
+    font-weight: bold;
+}
+.SiteMap_ChapterTitle {
+    font-weight: bold;
+}
+
+.SiteMap_SectionTitle {
+    font-weight: normal;
+    text-decoration : underline;
+}
+
+.SiteMap_SubContent {
+    padding-left : 25px;
+    line-height : 25px;
+}
+
+.SiteMap_SubSubContent {
+    padding-left : 50px;
+    line-height : 25px;
+}
+
+.SiteMap_Class {
+    background-color: #FFE0D9;
+}
+
+.SiteMap_Chapter {
+    margin-left: 25px;
+    margin-right: 25px;
+    background-color: #FFFFD7;
+}
+
+.SiteMap_Chapter_Alt {
+    margin-left: 25px;
+    margin-right: 25px;
+    background-color: #D6EDFE;
+}
+
+.Section_Divider {
+    width: 65%;
+    border-bottom-color: #CCCCCC;
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+}
+
+.Class_Divider {
+    width: 95%;
+    border-bottom-color: #000000;
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+}
+
+.BreadCrumb {
+	color : #999999;
+	font-size : smaller;
+	border-bottom : 1px solid #999999;
+}
+
+.Content_Head {
+	color : #000000;
+	background : #FFFFFF;
+	font-weight :bold;
+	text-transform : uppercase;
+	text-align : center;
+	/*margin-left : 5px;
+	margin-right : 5px;
+	padding-left : 5px;*/
+	padding-top : 3px;
+	padding-bottom : 3px;
+	border-bottom : 2px solid #000000;
+}
+
+.Content_SubHead {
+	/*font-size : 10pt;*/
+	color : #000000;
+	background : #FFFFFF;
+	font-weight :bold;
+	text-transform : uppercase;
+	text-decoration : underline;
+	text-align : center;
+}
+
+.Content_Items{
+	color :	#000000;
+	background : #FFFFFF;
+	padding-top : 10px;
+	padding-left : 5px;
+	padding-right : 5px;
+	padding-bottom : 5px;
+}
+
+.Top_Nav_Bar {
+    border-bottom-style: solid;
+    border-bottom-width: 2px;
+    border-bottom-color: #000000;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.Bottom_Nav_Bar {
+    border-top-style: solid;
+    border-top-width: 2px;
+    border-top-color: #000000;
+    border-bottom-style: solid;
+    border-bottom-width: 2px;
+    border-bottom-color: #000000;
+    margin-top : 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.Button_Outer {
+	height : 25px;
+	padding-top : 2px;
+	vertical-align : middle;
+    line-height : 25px;
+}
+
+.PrevNextButtonMobile {
+	border : 2px solid #FF0000;
+	background : #FFC6C6;
+	padding-top : 6px;
+	padding-bottom : 6px;
+	padding-left : 2px;
+	padding-right : 2px;
+    margin-bottom : 2px;
+    margin-top : 2px;
+	font-size : smaller;
+}
+
+.PrevNextButtonOff {
+	border : 2px solid #FF0000;
+	background : #FFC6C6;
+	padding-top : 1px;
+	padding-bottom : 1px;
+	padding-left : 2px;
+	padding-right : 2px;
+	font-size : smaller;
+}
+
+.PrevNextButtonOn {
+	border : 2px solid #000000;
+	background : #FFFFFF;
+	padding-top : 1px;
+	padding-bottom : 1px;
+	padding-left : 2px;
+	padding-right : 2px;
+	font-size : smaller;
+}
+
+a.aPrev:hover, a.aNext:hover {
+	color : #FF00FF;
+}
+
+a.aPrev:link, a.aNext:link {
+	color : #0000cc;
+}
+
+a.aPrev:visited, a.aNext:visited {
+	color : #0000cc;
+}
+
+.Notice {
+    border: 2px solid #FF0000;
+    background-color: #F0F0F0;
+    margin: 5px;
+    padding: 3px;
+}
+
+.All_Note {
+	margin-left : 3px;
+	margin-right : 3px;
+	font-size : smaller;
+	text-align : left;
+}
+
+.Top_Note {
+	margin-left : 3px;
+	margin-right : 3px;
+	font-size : smaller;
+	text-align : left;
+}
+
+.Middle_Note {
+	margin-left : 3px;
+	margin-right : 3px;
+	font-size : smaller;
+	text-align : left;
+}
+
+.Bottom_Note {
+	margin-left : 3px;
+	margin-right : 3px;
+	font-size : smaller;
+	text-align : left;
+}
+
+.Prob_Note {
+	margin-left : 3px;
+	margin-right : 3px;
+	font-size : smaller;
+	text-align : left;
+}
+
+.Classes_Note {
+	margin-left : 3px;
+	margin-right : 3px;
+	font-size : smaller;
+	text-align : left;
+}
+
+.Panel_Block {
+	border : 1px solid #999999;
+	padding : 5px;
+	margin-left : 5px;
+	margin-right : 15px;
+	width : 100%;
+	display : none;
+}
+
+.Show_Hide 
+{
+	text-decoration : none;
+	font-size : 8pt;
+}
+
+.ShowHide_Link 
+{
+    font-size : smaller;
+    margin-left : 5px;
+}
+
+.Solution_Block {
+	border : 1px solid #999999;
+	padding : 2px;
+	margin-left : 5px;
+	margin-right : 5px;
+	width : 97%;
+	display : none;
+}
+
+.PopUp_Source_Fixed_On 
+{
+	/*display : block;*/
+	background : #FF9933;
+	border-bottom : 1px dashed #000000;
+	cursor : pointer;
+	font-weight : bold;
+	width : 100px;
+	text-align : center;
+}
+
+.PopUp_Source_Fixed_Off 
+{
+	/*display : block;*/
+	font-weight : bold;
+	width : 100px;
+	text-align : center;
+	border-bottom : 1px solid #FFFFFF;
+}
+
+.PopUp_Source_On {
+	background : #FF9933;
+	border-bottom : 1px dashed #000000;
+	cursor : pointer;
+	font-weight : bold;
+	width : 100%;
+	text-align : center;
+}
+
+.PopUp_Source_Off {
+	font-weight : bold;
+	width : 100%;
+	text-align : center;
+	border-bottom : 1px solid #FFFFFF;
+}
+
+.PopUp {
+	position : absolute;
+	top : 0;
+	left : 0;
+	padding : 2;
+	background-color : #FFFFCC;
+	border : 1px solid #0066FF;
+	font-size:small;
+	display : none;
+	z-index : 99;
+	cursor : pointer;
+}
+
+.Image_Hint
+{
+	cursor : pointer;
+	vertical-align : middle;
+}
+
+.Balloon_PopUp {
+	position : absolute;
+	top : 0;
+	left : 0;
+	padding : 2;
+	display : none;
+	z-index : 99;
+	cursor : pointer;
+}
+
+.Balloon_Top_Tip 
+{
+    display : none;
+	background-image : url(/images/Balloon_Top_Left.gif);
+	background-repeat : no-repeat;
+	background-position : top left;
+	padding-top : 12px;
+	padding-left : 3px;
+	padding-right : 3px;
+	width : 100px;
+}
+
+.Balloon_Bottom_Tip 
+{
+	background-image : url(/images/Balloon_Bottom_Left.gif);
+	background-repeat : no-repeat;
+	background-position : bottom left;
+	padding-bottom : 12px;
+	padding-left : 3px;
+	padding-right : 3px;
+	width : 100px;
+}
+
+.Balloon_Header
+{
+	border : 1px solid black;
+	border-bottom-width : 0px;
+	background-color : #F2F2F2;
+	padding : 2px 2px 2px 2px;
+	width : 100px;
+	font-size:small;
+	text-transform : uppercase;
+}
+
+.Balloon 
+{
+	display : block;
+	border : 1px solid black;
+	border-bottom-width : 0px;
+	background-color : #D3FDB8;
+	padding-top : 2px;
+	padding-bottom : 2px;
+	padding-left : 2px;
+	padding-right : 2px;
+	width : 100px;
+	font-size : small;
+}
+
+.Error {
+	color : #FF0000;
+	font-weight:600;
+}
+
+.Watermark_Blur 
+{
+	background-image : url(/images/Google_poweredby.gif);
+	background-repeat : no-repeat;
+	color : #999999;
+}
+
+.Watermark_Focus 
+{
+	color : #000000;
+}
+
+
+
+.NotesTitle {
+	font-size : large;
+	font-weight : bold;
+}
+
+.HeadingText 
+{
+    font-size : 14.0pt;
+    font-family : Arial;
+	font-style : italic;
+}
+
+.RowOn {
+	background-color: #FFFFCC;
+}
+
+.RowOff {
+	background-color:#FFFFFF;
+}
+
+.DropDownHeader {
+	text-align:center;
+	font-size:larger;
+	font-weight:bold;
+}
+
+.MainTitle 
+{
+	font-weight:bold;
+}
+
+.PopUp_SubHeading {
+	font-weight:bold;
+	font-size:12px;
+	color:#000000;
+	text-align:center;
+	text-decoration:underline;
+}
+
+.PopUp_Heading {
+	font-weight:bold;
+	font-size:16px;
+	color:#000000;
+	text-align:center;
+}
+
+/* Obsolete */
+.Main_Heading {
+	font-weight:bold;
+	font-size:24px;
+	color:#000000;
+}
+
+/* Obsolete.. */
+.MainBox {
+	border : 4px inset #999933;
+	padding-right : 10px;
+	padding-bottom : 2px;
+	padding-left : 10px;
+}
+
+.DownloadBox {
+	border : 2px solid #000000;
+	background : #F0F0F0;
+	padding : 10px;
+	margin : 5px;
+}
+
+.NavBox {
+	padding-left : 5px;
+	padding-right : 5px;
+	/*padding-top : 10px;*/
+	padding-bottom : 10px;
+	margin-top : 5px;
+	margin-bottom : 3px;
+	text-align : left;
+}
+
+
+.SiteMap_Main {
+	margin-top : 20px;
+	background : #FFFFFF;
+	border-left : 2px solid #000000;
+	border-right : 2px solid #000000;
+	border-top : 2px solid #000000;
+	border-bottom : 2px solid #000000;
+	padding-bottom : 10px;
+}
+
+.SiteMap_Head {
+	/*font-size : 10pt;*/
+	color : #000000;
+	background : #FFFFFF;
+	font-weight :bold;
+	text-transform : uppercase;
+	text-align: center;
+	margin-left : 5px;
+	margin-right : 5px;
+	padding-left : 5px;
+	padding-top : 3px;
+	padding-bottom : 3px;
+	border-bottom : 1px solid #000000;
+}
+
+.SiteMap_Items{
+	color :	#000000;
+	background : #FFFFFF;
+	padding-top : 10px;
+	padding-left : 5px;
+	padding-right : 5px;
+	padding-bottom : 5px;
+}
+
+.Page_Button {
+	background : #FFFFFF;
+	font-size : smaller;
+	border : 1px solid #000000;
+	padding : 2px;
+	margin : 2px;
+}
+
+.Page_Button_Hover {
+	background : #FFFF99;
+	font-size : smaller;
+	border : 1px solid #000000;
+	padding : 2px;
+	margin : 2px;
+	color : #000000;
+}
+
+.Archive_News {
+	border-top : 1px solid #000000;
+	border-bottom : 1px solid #000000;
+	padding-left : 25px;
+	padding-right : 25px;
+	padding-top : 5px;
+	padding-bottom : 5px;
+}
+
+.Archive_Headline {
+	font-weight : bold;
+	text-decoration : underline;
+}
+
+.Archive_Item {
+	background-color : #FFFFFF;
+	border : 1px solid #000000;
+	margin-top : 10px;
+	margin-bottom : 10px;
+	padding : 10px;
+}
+
+/* Finally lets do the styles for individual id's....					*/
+
+
+#Head {
+	position : absolute;
+	top : 0px;
+	left : 15px;
+	color : #FFFF00;
+	font-family : helvetica, arial;
+	font-weight : 600;
+	width : 100%;
+	text-align : right;
+	padding-right : 25px;
+}
+
+#Foot {
+	color : #ff0000;
+	font-family : helvetica, arial;
+	font-size : 10px;
+}
+
+
+
+
+
+

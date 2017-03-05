@@ -1,0 +1,12 @@
+AP_Compass	KEYWORD1
+AP_compass	LITERAL1
+read	KEYWORD2
+initialise	KEYWORD2
+get_field	KEYWORD2
+raw_field	KEYWORD2
+get_declination	KEYWORD2
+calculate_heading	KEYWORD2
+setHil	KEYWORD2
+have_compass	KEYWORD2
+last_update_msec	KEYWORD2
+static_cast	LITERAL1

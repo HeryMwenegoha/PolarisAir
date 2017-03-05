@@ -1,0 +1,15 @@
+AP_AHRS	KEYWORD1
+update	KEYWORD2
+airspeed_estimate	KEYWORD2
+setHil	KEYWORD2
+healthy	KEYWORD2
+get_position	KEYWORD2
+groundspeed_vector	KEYWORD2
+isflying	KEYWORD2
+isnan	KEYWORD2
+iszero	KEYWORD2
+
+## USE THIS WORD FOR THE CLASS ##
+AP_ahrs	LITERAL1
+ToRad	LITERAL1
+ToDeg	LITERAL1

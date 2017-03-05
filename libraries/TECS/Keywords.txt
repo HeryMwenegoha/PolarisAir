@@ -1,0 +1,9 @@
+AP_TECS	KEYWORD1
+AP_tecs	LITERAL1
+update_pitch_throttle	KEYWORD2
+update_50Hz	KEYWORD2
+hgt_filtered	KEYWORD2
+spd_filtered	KEYWORD2
+throttle_dem	KEYWORD2
+pitch_dem	KEYWORD2
+climb_rate	KEYWORD2

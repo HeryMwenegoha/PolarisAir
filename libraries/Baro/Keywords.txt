@@ -1,0 +1,26 @@
+BMP180	KEYWORD1
+SFE_BMP180	KEYWORD2
+begin	KEYWORD2
+perform_measurement	KEYWORD2
+perform_measurement_NoTimer	KEYWORD2
+getBaselinePressure	KEYWORD2
+startTemperature	KEYWORD2
+getTemperature	KEYWORD2
+startPressure	KEYWORD2
+getPressure	KEYWORD2
+getError	KEYWORD2
+get_altitude	KEYWORD2
+sealevel	KEYWORD2
+baseline	KEYWORD2
+STATE_MACHINE	KEYWORD2
+
+## CONSTANTS ##
+AP_Baro	KEYWORD1
+AP_baro	LITERAL1
+read	KEYWORD2
+get_temperature	KEYWORD2
+get_pressure	KEYWORD2
+get_altitude	KEYWORD2
+have_sens	KEYWORD2
+get_baseline_pressure	KEYWORD2
+healthy	KEYWORD2

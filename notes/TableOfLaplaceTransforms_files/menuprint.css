@@ -1,0 +1,42 @@
+.mmenu
+{
+	position:absolute;
+	display:none;
+}
+
+.Menu_Main
+{
+	position:absolute;
+	display:none;
+}
+
+.Menu_Content
+{
+	position:absolute;
+	display:none;
+}
+
+.Top_Nav_Bar
+{
+	position:absolute;
+	display:none;
+}
+
+.Bottom_Nav_Bar
+{
+	position:absolute;
+	display:none;
+}
+
+.Window_Search
+{
+	position:absolute;
+	display:none;
+}
+
+.InnerNotesBox {
+	padding-left : 10px;
+	padding-right : 10px;
+	/*width : 95%;*/
+	text-align : left;
+}

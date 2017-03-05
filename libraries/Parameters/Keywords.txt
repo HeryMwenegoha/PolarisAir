@@ -1,0 +1,38 @@
+#### GLOBAL FUNCTIONS ####
+AP_Parameters	KEYWORD1
+AP_Storage	KEYWORD1
+ParameterStorage	KEYWORD2
+SendParamList	KEYWORD2
+UpdateStorage	KEYWORD2
+ReadAll	KEYWORD2
+WriteAllParameters	KEYWORD2
+
+## Literals ##
+AP_params	LITERAL1
+
+#### ROLL SYNTAX ####
+rev_roll_sig	KEYWORD2
+roll_kp	KEYWORD2
+roll_ki	KEYWORD2
+roll_kd	KEYWORD2
+roll_tau	KEYWORD2
+roll_rmax	KEYWORD2
+roll_imax	KEYWORD2
+max_roll_deg	KEYWORD2
+min_roll_deg	KEYWORD2
+max_roll_aux	KEYWORD2
+min_roll_aux	KEYWORD2
+
+#### PITCH SYNTAX ####
+rev_pitch_sig	KEYWORD2
+pitch_kp	KEYWORD2
+pitch_ki	KEYWORD2
+pitch_kd	KEYWORD2
+pitch_tau	KEYWORD2
+pitch_rmax	KEYWORD2
+pitch_imax	KEYWORD2
+max_pitch_deg	KEYWORD2
+min_pitch_deg	KEYWORD2
+max_pitch_aux	KEYWORD2
+min_pitch_aux	KEYWORD2
+PTCH2SRV_RLL	KEYWORD2

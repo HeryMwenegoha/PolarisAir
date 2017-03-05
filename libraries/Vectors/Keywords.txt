@@ -1,0 +1,15 @@
+Vectors	KEYWORD1
+Vector3	KEYWORD1
+Vector2	KEYWORD1
+Vector6	KEYWORD1
+Matrix3	KEYWORD1
+vector3f	KEYWORD2
+vector3i16	KEYWORD2
+vector3u16	KEYWORD2
+vector6f	KEYWORD2
+matrix3f	KEYWORD2
+matrix3i16	KEYWORD2
+matrix3u16	KEYWORD2
+transpose	KEYWORD2
+magnitude	KEYWORD2
+unit	KEYWORD2

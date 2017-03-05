@@ -1,0 +1,8 @@
+AP_Roll	KEYWORD1
+AP_Pitch	KEYWORD1
+AP_Yaw	KEYWORD1
+servo_out	KEYWORD1
+
+## CONSTANTS ##
+AP_AttitudeControl	KEYWORD1
+AP_yawcontroller	LITERAL1

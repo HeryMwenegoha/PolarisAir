@@ -1,0 +1,5 @@
+AP_DSM	KEYWORD1
+AP_dsm	LITERAL1
+initialise	KEYWORD2
+decode_channel	KEYWORD2
+decode_stream	KEYWORD2

@@ -1,0 +1,14 @@
+AP_Arduimu	KEYWORD1
+AP_arduimu	LITERAL1
+read	KEYWORD2
+AP_INS	KEYWORD1
+AP_ins	LITERAL1
+initialise	KEYWORD2
+read	KEYWORD2
+gyro	KEYWORD2
+accel	KEYWORD2
+raw_gyro	KEYWORD2
+raw_accel	KEYWORD2
+setHil	KEYWORD2
+have_ins	KEYWORD2
+last_update_msec	KEYWORD2

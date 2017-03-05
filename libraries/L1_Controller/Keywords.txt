@@ -1,0 +1,4 @@
+AP_L1	KEYWORD1
+AP_l1	LITERAL1
+update_waypoint	KEYWORD2
+update_loiter	KEYWORD2

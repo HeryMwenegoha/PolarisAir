@@ -1,0 +1,68 @@
+.Main_Note 
+{
+	margin-left : 3px;
+	margin-right : 3px;
+	margin-bottom : 15px;
+	border : solid 2px #000000;
+	background : #FFFFFF;
+	padding-left : 10px;
+	padding-right : 10px;
+	padding-top : 10px;
+	padding-bottom : 10px;
+	font-size : smaller;
+	text-align : left;
+}
+
+.Content 
+{
+	margin-left : 3px;
+	margin-right : 3px;
+	border : solid 2px #000000;
+	background : #FFFFFF;
+	padding-left : 10px;
+	padding-right : 10px;
+	padding-top : 10px;
+	padding-bottom : 10px;
+	text-align : left;
+}
+
+.Top_Links 
+{
+	margin-left : 3px;
+	margin-right : 3px;
+	margin-top : 2px;
+	margin-bottom : 4px;
+	font-size : smaller;
+	text-align : left;
+}
+
+.DownloadLinkOff {
+	font-size : smaller;
+	border-bottom : 1px dashed #000000;
+}
+
+.DownloadLinkOn {
+	font-size : smaller;
+	border-bottom : 2px dashed #000000;
+}
+
+.DownloadLinkOff_Normal {
+	border-bottom : 1px dashed #000000;
+}
+
+.DownloadLinkOn_Normal {
+	border-bottom : 2px dashed #000000;
+}
+
+.Problems
+{
+	height : 150px;
+	overflow :scroll;
+}
+
+.Solutions
+{
+	display : block;
+	border : solid 1px #CC0000;
+	width : 100%;
+}

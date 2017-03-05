@@ -1,0 +1,2 @@
+AP_Sensors	KEYWORD1
+AP_sensors	LITERAL1

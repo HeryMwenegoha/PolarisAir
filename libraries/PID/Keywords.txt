@@ -1,0 +1,26 @@
+AP_RollController	KEYWORD1
+AP_PitchController	KEYWORD1
+AP_SteerController	KEYWORD1
+AP_rollcontroller	LITERAL1
+AP_pitchcontroller	LITERAL1
+AP_steercontroller	LITERAL1
+AP_YawController	KEYWORD1
+AP_yawcontroller	LITERAL1
+AC_P	KEYWORD1
+AC_PID	KEYWORD1
+AC_ACCELPID	KEYWORD1
+AC_THRPID	KEYWORD1
+get_pid	KEYWORD2
+get_p	KEYWORD2
+reset	KEYWORD2
+rate_pid_roll	LITERAL1
+rate_pid_pitch	LITERAL1
+rate_pid_yaw	LITERAL1
+rate_pid_throttle	LITERAL1
+rate_pid_accel	LITERAL1
+stab_pid_roll	LITERAL1
+stab_pid_pitch	LITERAL1
+stab_pid_yaw	LITERAL1
+servo_out	KEYWORD1
+## CONSTANTS ##
+AP_PID	KEYWORD1

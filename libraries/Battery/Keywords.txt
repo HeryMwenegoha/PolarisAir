@@ -1,0 +1,6 @@
+AP_BatteryVolts	KEYWORD1
+AP_batteryvolts	LITERAL1
+_AP_batteryvolts	LITERAL1
+read	KEYWORD2
+initialise	KEYWORD2
+get_adc	KEYWORD2
