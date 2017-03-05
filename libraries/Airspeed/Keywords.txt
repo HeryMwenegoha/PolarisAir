@@ -1,0 +1,11 @@
+init	KEYWORD2
+start	KEYWORD2
+read	KEYWORD2
+get_airspeed	KEYWORD2
+get_temperature	KEYWORD2
+
+## CLASS INITIALISATION ##
+AP_Airspeed	KEYWORD1
+AP_airspeed	LITERAL1
+_airspeed	LITERAL1
+enabled	LITERAL1
