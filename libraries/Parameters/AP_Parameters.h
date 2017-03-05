@@ -33,7 +33,6 @@ struct _GROUP_DATA{
    const char     *id;
    float          val;
 };
-
 */
 
 
