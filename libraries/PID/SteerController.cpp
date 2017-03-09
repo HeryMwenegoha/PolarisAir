@@ -6,8 +6,8 @@ void AP_SteerController::initialise(AP_Storage *_AP, AP_GPS * _AP_GPS)
 	gains.ki   = &(_AP->ParameterStorage.list.steer_ki);
 	gains.kd   = &(_AP->ParameterStorage.list.steer_kd);
 	gains.tau  = &(_AP->ParameterStorage.list.steer_tau);
-	gains.rmax = &(_AP->ParameterStorage.list.steer_rmax);
-	gains.imax = &(_AP->ParameterStorage.list.steer_imax);
+	gains.rmax = (float *)&(_AP->ParameterStorage.list.steer_rmax);
+	gains.imax = (float *)&(_AP->ParameterStorage.list.steer_imax);
 	
 	_gps	= _AP_GPS;
 }

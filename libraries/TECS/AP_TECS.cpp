@@ -5,7 +5,7 @@
    _maxClimbRate     = 5.0f;
    _minSinkRate      = 2.0f;
    _timeConst        = 5.0f;
-   _thrDamp          = PARAMETERS->TECS_thr_Damping;
+   _thrDamp          = 0.5f;
    _integGain        = 0.1f;
    _vertAccLim       = 7.0f;
    _hgtCompFiltOmega = 1.0f;
@@ -14,10 +14,10 @@
    _spdWeight        = 1.0f;
    _ptchDamp         = 0.25f;
    _maxSinkRate      = 5.0f;
-   _landTrottle      = PARAMETERS->TECS_thr_land;
+   _landTrottle      = (float)PARAMETERS->TECS_thr_land;
    _spdWeightLand    = 1.0f;
-   _pitch_max        = PARAMETERS->AUTO_pitchmax; // deg
-   _pitch_min        = PARAMETERS->AUTO_pitchmin; // deg
+   _pitch_max        = (float)PARAMETERS->AUTO_pitchmax; // deg
+   _pitch_min        = (float)PARAMETERS->AUTO_pitchmin; // deg
    _land_sink        = 0.25f;
    _landTimeConst    = 2.0f;
    _landDamp         = 0.5f;
@@ -111,8 +111,8 @@ AP_TECS::update_speed()
 	 
      float EAS2TAS = 1; // Our flights for now are below 2000m so we can safely assum TAS == EAS == IAS
      _TAS_dem      = _EAS_dem * EAS2TAS;
-     _TASmax       = PARAMETERS->max_speed * EAS2TAS;
-     _TASmin       = PARAMETERS->min_speed * EAS2TAS;
+     _TASmax       = (float)PARAMETERS->max_speed * EAS2TAS;
+     _TASmin       = (float)PARAMETERS->min_speed * EAS2TAS;
 	 float div     = cos(_ahrs.roll);
 	 div           = constrain_float(div, 0.1f, 1.0f);
      if(PARAMETERS->TECS_stallPrevent == 1)
@@ -140,7 +140,7 @@ AP_TECS::update_speed()
 	 // airspeed estimate
 	 _EAS = _ahrs.airspeed_estimate();
 	 if(_EAS == 0){
-		_EAS = 0.5f * (PARAMETERS->min_speed  +  PARAMETERS->max_speed);       
+		_EAS = 0.5f * (float)(PARAMETERS->min_speed  +  PARAMETERS->max_speed);       
 	 }
 	_EAS = constrain_float(_EAS, 3.0, 40);
 
@@ -300,7 +300,7 @@ void AP_TECS::_update_throttle_dem_no_arspd()
     // linear interpolation based demanded throttle..
     float normThr;
     float pitchSlope;           // || _flight_stage_global == FLIGHT_LAND_APPROACH  
-	float thr_land = PARAMETERS->TECS_thr_land;
+	float thr_land = (float)PARAMETERS->TECS_thr_land;
 	
 	
 	
@@ -314,7 +314,7 @@ void AP_TECS::_update_throttle_dem_no_arspd()
 	}
 	else
 	{
-	  normThr = PARAMETERS->cru_thr * 0.01f;
+	  normThr = (float)PARAMETERS->cru_thr * 0.01f;
 	}
          
     if(_pitch_dem > 0.0f && _PITCHmaxf > 0.0f)
@@ -368,7 +368,7 @@ AP_TECS::_update_throttle_dem_arspd()
 		float K_STE2Thr = 1/(_timeConst * (_STEdot_max - _STEdot_min));
 		
 		float ff_throttle = 0;
-		float nomThr 	  = PARAMETERS->cru_thr * 0.01f; // cruise throttle
+		float nomThr 	  = (float)PARAMETERS->cru_thr * 0.01f; // cruise throttle
 		float cosPhi 	  = cos(_ahrs.roll);
 		float axb    = cosPhi * cosPhi;
 		cosPhi       = constrain_float(axb, 0.1f, 1.0f);
@@ -545,13 +545,13 @@ AP_TECS::update_pitch_throttle(float hgt_dem, float EAS_dem, uint16_t _flight_st
      */
     if(_flight_stage_global == FLIGHT_TAKEOFF)
     {
-		_THRmaxf = PARAMETERS->TECS_thr_tomax * 0.01f;
+		_THRmaxf = (float)PARAMETERS->TECS_thr_tomax * 0.01f;
     }
     else
     {
-		_THRmaxf = PARAMETERS->max_thr_perc   * 0.01f;
+		_THRmaxf = (float)PARAMETERS->max_thr_perc   * 0.01f;
     }
-    _THRminf   	 = PARAMETERS->min_thr_perc * 0.01f;
+    _THRminf   	 = (float)PARAMETERS->min_thr_perc   * 0.01f;
    
    
     /*@ update max and min pitch
@@ -560,14 +560,14 @@ AP_TECS::update_pitch_throttle(float hgt_dem, float EAS_dem, uint16_t _flight_st
      *@ 2. pitch max and min needs to correspond to the respective flight stage
      *@ For now AUTOPITCHMAX AND MIN will do
      */ 
-    _pitch_max     =  PARAMETERS->AUTO_pitchmax;   
+    _pitch_max     =  (float)PARAMETERS->AUTO_pitchmax;   
 	if(_pitch_max <= 0){
-	   _pitch_max  =  PARAMETERS->max_pitch_deg;
+	   _pitch_max  =  (float)PARAMETERS->max_pitch_deg;
 	}
 	
-	_pitch_min     =  PARAMETERS->AUTO_pitchmin;
+	_pitch_min     =  (float)PARAMETERS->AUTO_pitchmin;
 	if(_pitch_min >= 0){
-	  _pitch_min   =  -PARAMETERS->max_pitch_deg;
+	  _pitch_min   =  (float)-PARAMETERS->max_pitch_deg;
 	}	
 
 	
@@ -589,16 +589,17 @@ AP_TECS::update_pitch_throttle(float hgt_dem, float EAS_dem, uint16_t _flight_st
 
 		if(PARAMETERS->TECS_land_pitchmax > 0)
 		{
-			_pitch_max = min(_pitch_max, PARAMETERS->TECS_land_pitchmax);  // deg
+			_pitch_max = min(_pitch_max, (float)PARAMETERS->TECS_land_pitchmax);  // deg
 		}
 		_THRminf = 0.0f;
 	  
-		float time_to_flare = (-_ahrs.altitude_estimate()/_climb_rate) - PARAMETERS->TECS_flare_secs;
+		float flare_secs    = 5;
+		float time_to_flare = (-_ahrs.altitude_estimate()/_climb_rate) - flare_secs;
 		if(time_to_flare < 0)
 		{
 			// we should have started flaring right now.. 
 			// do this if not yet in  the landing stage..
-			_pitch_min = max(_pitch_min, PARAMETERS->TECS_land_pitchmin);
+			_pitch_min = max(_pitch_min, (float)PARAMETERS->TECS_land_pitchmin);
 
 		    _flaring = true;
 		}
@@ -610,13 +611,13 @@ AP_TECS::update_pitch_throttle(float hgt_dem, float EAS_dem, uint16_t _flight_st
 			float p_stab = 0;
 			if(PARAMETERS->AUTO_pitchmin < 0)
 			{
-				p_stab = PARAMETERS->AUTO_pitchmin;
+				p_stab = (float)PARAMETERS->AUTO_pitchmin;
 			}
 			else if(PARAMETERS->AUTO_pitchmin >= 0)
 			{
-				p_stab = -PARAMETERS->max_pitch_deg;
+				p_stab = (float)-PARAMETERS->max_pitch_deg;
 			}
-			float pitch_limit = p_stab	*	p	+	(1-p)	*	PARAMETERS->TECS_land_pitchmin;
+			float pitch_limit = p_stab	*	p	+	(1-p)	*	(float)PARAMETERS->TECS_land_pitchmin;
 			
 			_pitch_min = max(_pitch_min, pitch_limit);
 		}
@@ -640,8 +641,8 @@ AP_TECS::update_pitch_throttle(float hgt_dem, float EAS_dem, uint16_t _flight_st
     {
       _integ6_state      = 0.0f;
       _integ7_state      = 0.0f;
-      _throttle_dem      = PARAMETERS->cru_thr * 0.01f; 
-      _last_throttle_dem = PARAMETERS->cru_thr * 0.01f;
+      _throttle_dem      = (float)PARAMETERS->cru_thr * 0.01f; 
+      _last_throttle_dem = (float)PARAMETERS->cru_thr * 0.01f;
       _last_pitch_dem    =  _ahrs.pitch;
       _hgt_dem_adj_last  =  _ahrs.altitude_estimate();
       _hgt_dem_adj       =  _hgt_dem_adj_last;

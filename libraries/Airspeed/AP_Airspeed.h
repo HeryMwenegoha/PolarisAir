@@ -7,7 +7,7 @@
 class AP_Airspeed
 {
 	public:
-	AP_Airspeed(float *_enable):
+	AP_Airspeed(uint8_t *_enable):
 	_hil_mode(false),
 	_temperature(20.0f),
 	_airspeed(0.0f),
@@ -41,7 +41,7 @@ class AP_Airspeed
 	float _temperature;
 	bool _hil_mode;
 	bool   usable;
-	float  *enable;
+	uint8_t  *enable;
 };
 
 

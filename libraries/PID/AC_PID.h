@@ -20,21 +20,21 @@ class AC_PID
 				gains.kp      = &(_params->ParameterStorage.list.roll_kp);	
 				gains.ki 	  = &(_params->ParameterStorage.list.roll_ki);	
 				gains.kd 	  = &(_params->ParameterStorage.list.roll_kd);	
-				gains.imax    = &(_params->ParameterStorage.list.roll_imax);	
+				gains.imax    = (float *)&(_params->ParameterStorage.list.roll_imax);	
 				break;
 			
 			case PITCHPID:
 				gains.kp      = &(_params->ParameterStorage.list.pitch_kp);	
 				gains.ki 	  = &(_params->ParameterStorage.list.pitch_ki);	
 				gains.kd 	  = &(_params->ParameterStorage.list.pitch_kd);	
-				gains.imax    = &(_params->ParameterStorage.list.pitch_imax);	
+				gains.imax    = (float *)&(_params->ParameterStorage.list.pitch_imax);	
 				break;
 			
 			case YAWPID:
 				gains.kp      = &(_params->ParameterStorage.list.steer_kp);	
 				gains.ki 	  = &(_params->ParameterStorage.list.steer_ki);	
 				gains.kd 	  = &(_params->ParameterStorage.list.steer_kd);	
-				gains.imax    = &(_params->ParameterStorage.list.steer_imax);	
+				gains.imax    = (float *)&(_params->ParameterStorage.list.steer_imax);	
 				break;
 		}		
 	}

@@ -1,8 +1,7 @@
-#pragma once
+ #pragma once
 #include "Arduino.h"
 #include <EEPROM.h>
-
-#define MAX_WAYPOINTS   10
+#define MAX_WAYPOINTS   20
 
 class AP_WayPoint{
   public:

@@ -1,16 +1,13 @@
 #include "RollController.h"
 void AP_RollController::initialise(AP_Storage *_AP,  AP_AHRS *_AP_AHRS)
 {
-	gains.kp      = &(_AP->ParameterStorage.list.roll_kp);	
-	gains.ki 	  = &(_AP->ParameterStorage.list.roll_ki);	
-	gains.kd 	  = &(_AP->ParameterStorage.list.roll_kd);	
-	gains.tau	  = &(_AP->ParameterStorage.list.roll_tau);
-	gains.rmax 	  = &(_AP->ParameterStorage.list.roll_rmax);	
-	gains.imax    = &(_AP->ParameterStorage.list.roll_imax);		
-	//gains.max_aux = &(_AP->ParameterStorage.list.max_roll_aux);	
-	//gains.min_aux = &(_AP->ParameterStorage.list.min_roll_aux);	
-	
-	_ahrs	  = _AP_AHRS;
+	gains.kp	= &(_AP->ParameterStorage.list.roll_kp);	
+	gains.ki	= &(_AP->ParameterStorage.list.roll_ki);	
+	gains.kd	= &(_AP->ParameterStorage.list.roll_kd);	
+	gains.tau	= &(_AP->ParameterStorage.list.roll_tau);
+	gains.rmax	= (float *)&(_AP->ParameterStorage.list.roll_rmax);	
+	gains.imax	= (float *)&(_AP->ParameterStorage.list.roll_imax);			
+	_ahrs		= _AP_AHRS;
 }
 
 float AP_RollController::_rate_out(float desired_rate, float meas_rate, float spd_scaler)
@@ -29,9 +26,7 @@ float AP_RollController::_rate_out(float desired_rate, float meas_rate, float sp
 	float KD         = *(gains.kd);
 	float TAU   	 = *(gains.tau);
 	float RMAX  	 = *(gains.rmax);
-    float IMAX       = *(gains.imax);	// -> needs to be 1/3 of total aileron travel
-    //float MAX_AUX    = *(gains.max_aux);	
-    //float MIN_AUX    = *(gains.min_aux);	
+    float IMAX       = *(gains.imax);	// -> needs to be 1/3 of total aileron travel	
    
     float ki_rate    = KI* TAU; 
 	float EAS2TAS    = 1;
@@ -74,9 +69,7 @@ float AP_RollController::_rate_out(float desired_rate, float meas_rate, float sp
 	_output 	= _pid_info.P + _pid_info.I + _pid_info.D;
 	
 	float _last_output = constrain_float(_output, -45, 45); // constrain to min/max aileron deflection
-	
-	//float servo_pwm  = map_float(_last_output, -45, 45, MIN_AUX, MAX_AUX);
-	
+		
 	return _last_output;
 }
 

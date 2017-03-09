@@ -3,11 +3,23 @@
 
 AP_Storage  AP_params;
 
-
 AP_Storage::AP_Storage()
-{
-    
+{ 
 };
+
+/*
+union AP_Storage::union_type(uint8_t type)
+{
+	switch(type)
+	{
+		case FLOAT:
+		return _f_un;
+		
+		case U8:
+		return _f_un;	
+	}
+}
+*/
 
 void
 AP_Storage::ReadAll(void)
@@ -16,114 +28,187 @@ AP_Storage::ReadAll(void)
    {
       ParameterStorage.paramBuffer[x] = EEPROM.read(3000+x);
    }
-   Serial.println(F("Read All Parameters"));
+   
+   //for(int i = 0; i < 65; i++)
+   //Serial.println(get_param(i));
+   
+   Serial.println(F("AP_Parameters::status	Read	All	Parameters"));
 }
 
+void 
+AP_Storage::print_all(){
+	Serial.println(ParameterStorage.list.rudder_mix);
+	Serial.println(ParameterStorage.list.rev_roll_sig);
+	Serial.println(ParameterStorage.list.rev_pitch_sig);
+	Serial.println(ParameterStorage.list.rev_yaw_sig);
+	Serial.println(ParameterStorage.list.rev_thr_sig);
+
+	Serial.println(ParameterStorage.list.roll_kp);
+	Serial.println(ParameterStorage.list.roll_ki);
+	Serial.println(ParameterStorage.list.roll_kd);
+	Serial.println(ParameterStorage.list.roll_tau);
+	Serial.println(ParameterStorage.list.roll_rmax);
+	Serial.println(ParameterStorage.list.roll_imax);
+	Serial.println(ParameterStorage.list.max_roll_deg);
+	Serial.println(ParameterStorage.list.max_roll_aux);
+	Serial.println(ParameterStorage.list.min_roll_aux);
+	 
+	Serial.println(ParameterStorage.list.pitch_kp);
+	Serial.println(ParameterStorage.list.pitch_ki);
+	Serial.println(ParameterStorage.list.pitch_kd);
+	Serial.println(ParameterStorage.list.pitch_tau);
+	Serial.println(ParameterStorage.list.pitch_rmax);
+	Serial.println(ParameterStorage.list.pitch_imax);
+	Serial.println(ParameterStorage.list.max_pitch_deg);
+	Serial.println(ParameterStorage.list.PTCH2SRV_RLL);
+	Serial.println(ParameterStorage.list.max_pitch_aux);
+	Serial.println(ParameterStorage.list.min_pitch_aux);
+
+	Serial.println(ParameterStorage.list.steer_kp);
+	Serial.println(ParameterStorage.list.steer_ki);
+	Serial.println(ParameterStorage.list.steer_kd);
+	Serial.println(ParameterStorage.list.steer_tau);
+	Serial.println(ParameterStorage.list.steer_rmax);
+	Serial.println(ParameterStorage.list.steer_imax);
+	Serial.println(ParameterStorage.list.YAW2SRV_SLP);
+	Serial.println(ParameterStorage.list.YAW2SRV_RLL);
+	Serial.println(ParameterStorage.list.max_yaw_aux);
+	Serial.println(ParameterStorage.list.min_yaw_aux);
+
+
+	Serial.println(ParameterStorage.list.L1_damping);
+	Serial.println(ParameterStorage.list.L1_period);
+	Serial.println(ParameterStorage.list.L1_bank);
+	Serial.println(ParameterStorage.list.L1_gravity);
+
+	Serial.println(ParameterStorage.list.max_thr_aux);
+	Serial.println(ParameterStorage.list.min_thr_aux);
+	Serial.println(ParameterStorage.list.max_thr_perc);
+	Serial.println(ParameterStorage.list.min_thr_perc);
+	Serial.println(ParameterStorage.list.cru_thr);	   
+
+
+	Serial.println(ParameterStorage.list.slew_rate);
+	Serial.println(ParameterStorage.list.max_speed);
+	Serial.println(ParameterStorage.list.min_speed);
+	Serial.println(ParameterStorage.list.cru_speed);
+	Serial.println(ParameterStorage.list.land_speed);
+	Serial.println(ParameterStorage.list.cru_altitude);
+	Serial.println(ParameterStorage.list.APPROACH);
+
+	Serial.println(ParameterStorage.list.TECS_thr_land);
+	Serial.println(ParameterStorage.list.TECS_thr_tomax);
+	Serial.println(ParameterStorage.list.AUTO_pitchmax);
+	Serial.println(ParameterStorage.list.AUTO_pitchmin);
+	Serial.println(ParameterStorage.list.TECS_land_pitchmax);
+	Serial.println(ParameterStorage.list.TECS_land_pitchmin);
+	Serial.println(ParameterStorage.list.arspdEnabled);
+	Serial.println(ParameterStorage.list.TECS_stallPrevent);
+
+	Serial.println(ParameterStorage.list.PowerModule_Gain);
+
+	Serial.println(ParameterStorage.list.Accel2_offsetX);
+	Serial.println(ParameterStorage.list.Accel2_offsetY);
+	Serial.println(ParameterStorage.list.Accel2_offsetZ);
+	Serial.println(ParameterStorage.list.Accel2_lsbX);   
+	Serial.println(ParameterStorage.list.Accel2_lsbY);
+	Serial.println(ParameterStorage.list.Accel2_lsbZ);
+}
 
 void
 AP_Storage::WriteAll(void)
-{
-  ParameterStorage.list.rudder_mix    = 0.3; // Pos 0
-  ParameterStorage.list.rev_roll_sig  = 1.0; // Pos 1
-  ParameterStorage.list.rev_pitch_sig = 1.0; // Pos 2
-  ParameterStorage.list.rev_yaw_sig   = 1.0; // Pos 3
-  ParameterStorage.list.rev_thr_sig   = 1.0; // Pos 4  
-  
-  ParameterStorage.list.roll_kp       = 0.6;  // Pos 5
-  ParameterStorage.list.roll_ki       = 0.2;  // Pos 6
-  ParameterStorage.list.roll_kd       = 0.02; // Pos 7
-  ParameterStorage.list.roll_tau      = 0.5;  // --> 8
-  ParameterStorage.list.roll_rmax     = 60;   // --> 9
-  ParameterStorage.list.roll_imax     = 15;   // --> 10
-  ParameterStorage.list.max_roll_deg  = 45;   // Pos 11 
-  ParameterStorage.list.max_roll_aux  = 2000; // Pos 12 
-  ParameterStorage.list.min_roll_aux  = 1000; // Pos 13 
-  
-  ParameterStorage.list.pitch_kp      = 0.75;  // Pos 14 
-  ParameterStorage.list.pitch_ki      = 0.25;  // Pos 15 
-  ParameterStorage.list.pitch_kd      = 0.05; // Pos 16 
-  ParameterStorage.list.pitch_tau     = 0.5;  // --> 17
-  ParameterStorage.list.pitch_rmax    = 60;   // --> 18
-  ParameterStorage.list.pitch_imax    = 15;   // --> 19 -- . changed from the old value
-  ParameterStorage.list.max_pitch_deg = 25;   // Pos 20
-  ParameterStorage.list.PTCH2SRV_RLL  = 1;    // --> 21    
-  ParameterStorage.list.max_pitch_aux = 2000; // Pos 22
-  ParameterStorage.list.min_pitch_aux = 1000; // Pos 23
-  
-  ParameterStorage.list.steer_kp        = 1.8;  // Pos 24
-  ParameterStorage.list.steer_ki        = 0.25;  // Pos 25
-  ParameterStorage.list.steer_kd        = 0.005;  // Pos 26
-  ParameterStorage.list.steer_tau       = 0.75;  // --> 27
-  ParameterStorage.list.steer_rmax      = 90;  // --> 28
-  ParameterStorage.list.steer_imax      = 15;  // --> 29
-  ParameterStorage.list.YAW2SRV_SLP   = 0.0;  // --> 30
-  ParameterStorage.list.YAW2SRV_RLL   = 1.0;  // --> 31
-  ParameterStorage.list.YAW_FFRDDRMIX = 0.3;  // --> 32
-  ParameterStorage.list.max_yaw_aux   = 2000; // Pos 33
-  ParameterStorage.list.min_yaw_aux   = 1000; // Pos 34
-  
-  ParameterStorage.list.L1_damping    = 0.707;  // --> 35
-  ParameterStorage.list.L1_period     = 20;      // --> 36
-  ParameterStorage.list.L1_bank       = 45;      // --> 37
-  ParameterStorage.list.L1_gravity    = 9.806; // --> 38
-  
-  ParameterStorage.list.max_thr_aux   = 2000;    // Pos 39
-  ParameterStorage.list.min_thr_aux   = 1000;    // Pos 40
-  ParameterStorage.list.max_thr_perc  = 100;     // Pos 41
-  ParameterStorage.list.min_thr_perc  = 0;       // Pos 42
-  ParameterStorage.list.cru_thr       = 50;      // Pos 43
-  ParameterStorage.list.slew_rate     = 75;      // Pos 44
- 
-  ParameterStorage.list.max_speed     = 20;    // --> 45
-  ParameterStorage.list.min_speed     = 5;     // --> 46  
-  ParameterStorage.list.cru_speed     = 13;    // Pos 47  // Demanded Speed
-  ParameterStorage.list.land_speed    = 10;    // Pos 47  // Demanded Speed
-  ParameterStorage.list.cru_altitude  = 100;   // Pos 48  // Demanded Altitude
-  
-  ParameterStorage.list.APPROACH             = 0.0;   // Pos 49  
-  ParameterStorage.list.TECS_thr_Proportional= 1.0f;  // Pos 50
-  ParameterStorage.list.TECS_thr_Integrator  = 0.1f;
-  ParameterStorage.list.TECS_thr_Damping     = 0.5f; // Used to be 0.
-  ParameterStorage.list.TECS_thr_TCONST      = 5.0f;
-  ParameterStorage.list.TECS_thr_rmax        = 100;
-  ParameterStorage.list.TECS_thr_SlewRate    = 100;
-  ParameterStorage.list.TECS_thr_land        = 30;
-  ParameterStorage.list.TECS_thr_tomax       = 100;
-  ParameterStorage.list.AUTO_pitchmax        =  20;
-  ParameterStorage.list.AUTO_pitchmin        = -20;
-  
-  ParameterStorage.list.TECS_land_pitchmax   =  5;
-  ParameterStorage.list.TECS_land_pitchmin   = -5;
-  ParameterStorage.list.TECS_maxClimbRate    =  5;
-  ParameterStorage.list.TECS_maxSinkRate     =  5;
-  ParameterStorage.list.TECS_minSinkRate     = 2;
-  ParameterStorage.list.TECS_flare_secs      = 5;
-  ParameterStorage.list.arspdEnabled    	 = 1;
-  ParameterStorage.list.TECS_stallPrevent    = 1; //
-  ParameterStorage.list.PowerModule_Gain	 = 0.05;
-  
-  
-  ParameterStorage.list.Accel1_offsetX	 	= 0;
-  ParameterStorage.list.Accel1_offsetY	 	= 0;
-  ParameterStorage.list.Accel1_offsetZ		= 0;
-  ParameterStorage.list.Accel1_lsbX			= 8192; // LSB/G
-  ParameterStorage.list.Accel1_lsbY			= 8192; // LSB/G
-  ParameterStorage.list.Accel1_lsbZ			= 8192; // LSB/G
-  
-  
-  ParameterStorage.list.Accel2_offsetX	 	= -212;
-  ParameterStorage.list.Accel2_offsetY	 	= 74;
-  ParameterStorage.list.Accel2_offsetZ		= -13;
-  ParameterStorage.list.Accel2_lsbX			= 8353; // LSB/G
-  ParameterStorage.list.Accel2_lsbY			= 8326; // LSB/G
-  ParameterStorage.list.Accel2_lsbZ			= 8431; // LSB/G
-  
-  for(int x = 0; x<(sizeof(_parameter_list_t)); x++)
+{	
+  if(PARAMETER_VERSION != (uint8_t)EEPROM.read(3999))
   {
-    EEPROM.write(3000+x,ParameterStorage.paramBuffer[x]);
+	 
+	 // EEPROM ERASE
+	 for(int index = 0; index < (sizeof(_parameter_list_t) + 50); index++)
+	   EEPROM.write(3000+index, 0);
+   
+     // UPDATE BUFFER
+	 for(int8_t x = 0; x <GROUP_DATA_SIZE; x++)
+	 {		 
+		 _f_un float_union;
+		 float_union.val = pgm_read_float(&GROUP_DATA[x].val);
+
+		 uint8_t pos     = (uint8_t)pgm_read_word(&GROUP_DATA[x].pos);
+		 uint8_t len     = (uint8_t)pgm_read_word(&GROUP_DATA[x].len);
+		 
+		 // char un[16];
+		 // strcpy_P(un, (char *)pgm_read_word(&GROUP_DATA[x].id));
+		 // Serial.print(pgm_read_word(&(GROUP_DATA[x].id + 2)));
+		 // Serial.print("		");
+		 // Serial.println(un);
+		 switch((uint8_t)pgm_read_word(&GROUP_DATA[x].type))
+		 {
+			 case FLOAT: {
+					 _f_un float_union;
+					 float value     = pgm_read_float(&GROUP_DATA[x].val);
+					 float_union.val = value;
+					 for(int i = pos; i< (pos + len); i++){
+						ParameterStorage.paramBuffer[i] = float_union.buffer[i - pos];
+					 }
+				 }
+				 break;
+			 
+			 case U8:{
+					 _u8_un u8_union;
+					 uint8_t value     = (uint8_t)pgm_read_float(&GROUP_DATA[x].val);
+					 u8_union.val = value;
+					 for(int i = pos; i< (pos + len); i++){
+						ParameterStorage.paramBuffer[i] = u8_union.buffer[i - pos];
+					 }
+				 }
+				 break;
+			 
+			 case I8:{
+					 _i8_un i8_union;
+					 int8_t value     = (int8_t)pgm_read_float(&GROUP_DATA[x].val);
+					 i8_union.val = value;
+					 for(int i = pos; i< (pos + len); i++){
+						ParameterStorage.paramBuffer[i] = i8_union.buffer[i - pos];
+					 }
+				 }
+				 break;
+			 
+			 case U16:{
+					 _u16_un u16_union;
+					 uint16_t value     = (uint16_t)pgm_read_float(&GROUP_DATA[x].val);
+					 u16_union.val = value;
+					 for(int i = pos; i< (pos + len); i++){
+						ParameterStorage.paramBuffer[i] = u16_union.buffer[i - pos];
+					 }
+				 }
+				 break;
+			 
+			 case I16:{
+					 _i16_un i16_union;
+					 int16_t value     = (int16_t)pgm_read_float(&GROUP_DATA[x].val);
+					 i16_union.val = value;
+					 for(int i = pos; i< (pos + len); i++){
+						ParameterStorage.paramBuffer[i] = i16_union.buffer[i - pos];
+					 }
+				 }
+				 break;
+		 }
+	  }
+	  
+	// UPDATE EEPROM
+	for(int index = 0; index < sizeof(_parameter_list_t); index++)
+		EEPROM.write(3000+index,ParameterStorage.paramBuffer[index]);
+	   
+	// PRINT VALUES
+	#if PRINTING_ALL
+	print_all();
+	#endif
+	   
+	EEPROM.write(3999,PARAMETER_VERSION);	  
+	Serial.println(F("AP_Parameters::Status	Parameters	Written"));
   }
-  
-  Serial.println(F("Written	all	parameters"));
+  else
+  {
+	  Serial.println(F("AP_Parameters::Status	Parameters	UptoDate"));
+  }
 }
 
 
@@ -133,12 +218,12 @@ AP_Storage::initialise(HardwareSerial *_Port)
   Port = _Port;
   
   // Code once
-  //WriteAll();
+  WriteAll();
     
   // Read Parameters
   ReadAll();
   
-  Serial.println(F("Parameters	Initialised"));
+  Serial.println(F("AP_Parameters::status	Initialised"));
 }
 
 
@@ -154,7 +239,7 @@ AP_Storage::mavlink_sendParameter(byte uav_id, const char param_id[16], float pa
    param_id, 
    param_value, 
    param_type, 
-   sizeof(_parameter_list_t)/4, 
+   GROUP_DATA_SIZE, 
    param_index
   );  
   
@@ -164,48 +249,211 @@ AP_Storage::mavlink_sendParameter(byte uav_id, const char param_id[16], float pa
 }
 
 
+// Gets parameter from paramBuffer
+float 
+AP_Storage::get_param(const uint8_t x){
+	
+	if(x >= GROUP_DATA_SIZE){
+		Serial.println(F("Index	Outof	Range"));
+		return 0;
+	}
+	
+	 uint8_t type    = (uint8_t)pgm_read_word(&GROUP_DATA[x].type);
+	 uint8_t pos     = (uint8_t)pgm_read_word(&GROUP_DATA[x].pos);
+	 uint8_t len     = (uint8_t)pgm_read_word(&GROUP_DATA[x].len);
+	 float val       = 0;
+ 
+	 switch(type)
+	 {
+		 case FLOAT: {
+				_f_un float_union;
+				 for(int i = pos; i< (pos + len); i++){
+					float_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = float_union.val;
+				 }
+			 }
+			 return val;
+		 
+		 case U8:{
+				 _u8_un u8_union;
+				 for(int i = pos; i< (pos + len); i++){
+					u8_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = u8_union.val;
+				 }
+			 }
+			 return val;
+		 
+		 case I8:{
+				 _i8_un i8_union;
+				 for(int i = pos; i< (pos + len); i++){
+					i8_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = i8_union.val;
+				 }
+			 }
+			 return val;
+		 
+		 case U16:{
+				 _u16_un u16_union;
+				 for(int i = pos; i< (pos + len); i++){
+					u16_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = u16_union.val;
+				 }
+			 }
+			 return val;
+		 
+		 case I16:{
+				 _i16_un i16_union;
+				 for(int i = pos; i< (pos + len); i++){
+					i16_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = i16_union.val;
+				 }
+			 }
+			 return val;
+	 }	
+}
+
+
+// Gets parameter from paramBuffer
+float 
+AP_Storage::get_param(const char param_id[16]){
+	
+	int8_t x  = -1;
+	char ppm_id[16];
+	for(int i = 0; i < GROUP_DATA_SIZE; i++){
+		strcpy_P(ppm_id, (char *)pgm_read_word(&GROUP_DATA[i].id));
+		if(strcmp(param_id, ppm_id) == 0)
+		{
+			x = i;
+			break;
+		}
+	}
+	
+	if(x < 0)
+	{
+		Serial.println(F("Parameter	Not	Found"));
+		return 0;
+	}
+	else if(x > GROUP_DATA_SIZE){
+		Serial.println(F("Index	Outof	Range"));
+		return 0;	
+	}
+	
+	return get_param(x);
+	
+	/*
+	uint8_t type  = (uint8_t)pgm_read_word(&GROUP_DATA[x].type);
+	uint8_t pos   = (uint8_t)pgm_read_word(&GROUP_DATA[x].pos);
+	uint8_t len   = (uint8_t)pgm_read_word(&GROUP_DATA[x].len);
+	float val     = 0;
+ 
+	switch(type)
+	{
+		 case FLOAT: {
+				_f_un float_union;
+				 for(int i = pos; i< (pos + len); i++){
+					float_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = float_union.val;
+				 }
+			 }
+			 return val;
+		 
+		 case U8:{
+				 _u8_un u8_union;
+				 for(int i = pos; i< (pos + len); i++){
+					u8_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = u8_union.val;
+				 }
+			 }
+			 return val;
+		 
+		 case I8:{
+				 _i8_un i8_union;
+				 for(int i = pos; i< (pos + len); i++){
+					i8_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = i8_union.val;
+				 }
+			 }
+			 return val;
+		 
+		 case U16:{
+				 _u16_un u16_union;
+				 for(int i = pos; i< (pos + len); i++){
+					u16_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = u16_union.val;
+				 }
+			 }
+			 return val;
+		 
+		 case I16:{
+				 _i16_un i16_union;
+				 for(int i = pos; i< (pos + len); i++){
+					i16_union.buffer[i - pos] = ParameterStorage.paramBuffer[i];
+				 val = i16_union.val;
+				 }
+			 }
+			 return val;
+	 }
+*/	 
+}
+
+
+
+// Get Param Type given index
+uint8_t 
+AP_Storage::get_type(const uint8_t x){
+	
+	if(x >= GROUP_DATA_SIZE)
+		return 0;
+	
+	uint8_t type = (uint8_t)pgm_read_word(&GROUP_DATA[x].type);
+
+	return type;
+}
+
+
+// Get parameter type given parameterId
+uint8_t 
+AP_Storage::get_type(const char parameterId[16]){
+
+	char ppm_id[16];
+	for(int i = 0; i < GROUP_DATA_SIZE; i++)
+	{
+		strcpy_P(ppm_id, (char *)pgm_read_word(&GROUP_DATA[i].id));
+		if(strcmp(parameterId, ppm_id) == 0)	
+			return (uint8_t)pgm_read_word(&GROUP_DATA[i].type);
+	}
+}
+
+
+// Retrun the Index of this ParameterId
+uint8_t AP_Storage::find_parameter(const char param_id[16]){
+
+  uint8_t parameter_index = 0;
+  char param_buffer[16];
+  while(parameter_index < GROUP_DATA_SIZE)
+  {
+    strcpy_P(param_buffer, (char *)pgm_read_word(&GROUP_DATA[parameter_index].id)); // copy parameter id from flash into parameter_id variable
+    if(strcmp(param_id, param_buffer) == 0)
+		return parameter_index;
+	else
+		parameter_index++;
+  }
+}
+
+
+
 void 
 AP_Storage::SendParamList(byte UAV_ID, mavlink_message_t *msg)
-{
-PGM_Stufff pgm_stuff;
-
-  char un[16];
-  
-  for(int8_t i = 0; i<60; i++){
-   strcpy_P(un ,(char *)pgm_read_byte(&GROUP_DATA[i].idx));
-  Serial.print((uint8_t)pgm_read_word(&GROUP_DATA[i].idx));
-  
- Serial.print(F("  "));
- uint8_t data_type = (uint8_t)pgm_read_word(&GROUP_DATA[i].type);
- Serial.print(data_type);
- Serial.print(F("  "));
- Serial.print((uint8_t)pgm_read_word(&GROUP_DATA[i].pos));
- Serial.print(F("  "));
- Serial.print((uint8_t)pgm_read_word(&GROUP_DATA[i].len));
- Serial.print(F("  "));
- Serial.print((char *)pgm_read_word(&GROUP_DATA[i].id));
- Serial.print(F("  "));
-  Serial.print(pgm_stuff.pgm_read_val(0,i));
-  Serial.println(F("  "));
-  
-  }
-	
-	
-	
+{	
   union _f_un param_un;                                                            // only one copy is created instead of millions in the while loop..
   char  parameter_id[16];
   byte  parameter_index = 0;
   
-  while(parameter_index < sizeof(_parameter_list_t)/4)                             // this is the number of parameters
+  while(parameter_index < GROUP_DATA_SIZE)                             // this is the number of parameters
   {      
-    strcpy_P(parameter_id, (char*)pgm_read_word(&(param_table[parameter_index]))); // copy parameter id from flash into parameter_id variable
-    
-	for(int y = 0; y < 4; y++ )
-    {
-       param_un.buffer[y] = ParameterStorage.paramBuffer[y  +  (parameter_index  *  4)];    // read paramter from eeprom and send
-    }
-    
-	mavlink_sendParameter(UAV_ID, parameter_id, param_un.val, MAV_VAR_FLOAT, parameter_index, msg);  
+    strcpy_P(parameter_id, (char *)pgm_read_word(&GROUP_DATA[parameter_index].id)); // copy parameter id from flash into parameter_id variable
+     
+	mavlink_sendParameter(UAV_ID, parameter_id, get_param(parameter_index), (uint8_t)pgm_read_word(&GROUP_DATA[parameter_index].type), parameter_index,  msg);  
     
 	parameter_index++;    
     
@@ -217,35 +465,76 @@ PGM_Stufff pgm_stuff;
 
 void AP_Storage::UpdateStorage(const byte UAV_ID, const char param_id[16], float param_value, mavlink_message_t *msg)
 {  
-  char param_buffer[16];
-  union _f_un param_un;
-  uint8_t parameter_index = 0;
+  uint8_t parameter_index = -1;
   
-  while(parameter_index < sizeof(_parameter_list_t)/4)
-  {
-    strcpy_P(param_buffer, (char*)pgm_read_word(&(param_table[parameter_index]))); 
+  parameter_index = find_parameter(param_id);
+  
+  if(parameter_index < 0)
+	  return;
+  else{
+	uint8_t type = (uint8_t)pgm_read_word(&GROUP_DATA[parameter_index].type);
+	uint8_t pos  = (uint8_t)pgm_read_word(&GROUP_DATA[parameter_index].pos);
+	uint8_t len  = (uint8_t)pgm_read_word(&GROUP_DATA[parameter_index].len);	
 	
-	// check the returned char array against the received parameter id
-    if(strcmp(param_id, param_buffer) == 0)
-    {
-      param_un.val  = param_value; 
-     
-	  for(int y = 0; y < 4; y++ )
-      { 
-         EEPROM.write(3000  +  y  +  (parameter_index  *  4), param_un.buffer[y]);	    // write  value to storage
-		 ParameterStorage.paramBuffer[y + (parameter_index*4)] = param_un.buffer[y];    // updates global parameter
-      }
-	  
-	  for(int y = 0; y < 4; y++ )
-      {
-         param_un.buffer[y] = EEPROM.read(3000  +  y  +  (parameter_index * 4));      	// read from eeprom and send the read parameter and not the received one. THis makes sure that the value has been updated                                                                      // 4ms increment in time
-      }
-	 	  
-      mavlink_sendParameter(UAV_ID, param_buffer, param_un.val, MAV_VAR_FLOAT, parameter_index, msg);      
-	  
-	  break;
-    }
-    parameter_index++;
+	// EEPROM UPDATE
+	switch(type)
+	{
+		case FLOAT: {
+				_f_un float_union;
+				float_union.val = param_value;
+				 for(int i = pos; i< (pos + len); i++){
+					EEPROM.write(EEPROM_PARAMETER_PAGE + i, float_union.buffer[i - pos]);
+					ParameterStorage.paramBuffer[i] = float_union.buffer[i - pos];
+				 }
+			 }
+			 break;;
+		 
+		case U8:{
+				 _u8_un u8_union;
+				u8_union.val = param_value;
+				
+				 for(int i = pos; i< (pos + len); i++){
+					EEPROM.write(EEPROM_PARAMETER_PAGE + i, u8_union.buffer[i - pos]);
+					ParameterStorage.paramBuffer[i] = u8_union.buffer[i - pos];
+				 }
+			 }
+			 break;
+		 
+		case I8:{
+				 _i8_un i8_union;
+				 i8_union.val = param_value;
+				 for(int i = pos; i< (pos + len); i++){
+					EEPROM.write(EEPROM_PARAMETER_PAGE + i, i8_union.buffer[i - pos]);
+					ParameterStorage.paramBuffer[i] = i8_union.buffer[i - pos];
+				 }
+			 }
+			 break;
+		 
+		case U16:{
+				 _u16_un u16_union;
+				 u16_union.val = param_value;
+				 for(int i = pos; i< (pos + len); i++){
+					EEPROM.write(EEPROM_PARAMETER_PAGE + i, u16_union.buffer[i - pos]);
+					ParameterStorage.paramBuffer[i] = u16_union.buffer[i - pos];
+				 }
+			 }
+			 break;
+		 
+		case I16:{
+				 _i16_un i16_union;
+				 i16_union.val = param_value;
+				 for(int i = pos; i< (pos + len); i++){
+					EEPROM.write(EEPROM_PARAMETER_PAGE + i, i16_union.buffer[i - pos]);
+					ParameterStorage.paramBuffer[i] = i16_union.buffer[i - pos];
+				 }
+			 }
+			 break;
+   }	
+	
+   // SEND PARAMETER
+   float value = get_param(parameter_index);
+   mavlink_sendParameter(UAV_ID, param_id, value, type, parameter_index, msg); 
+  
   }
 }
   

@@ -18,6 +18,7 @@
 #include "AP_TECS.h"   // Change hgtcompfilter
 #include "AP_Program.h"
 #include "AP_Mavlink.h"
+#include <avr/pgmspace.h>
 
 
 #if PLANE_TYPE == 100
@@ -44,17 +45,15 @@ uint32_t blink_msec;
 byte     medium_loop_counter;
 #define  LEDPIN 12
 
-
 void setup()
 {
   Serial.begin(57600);
   pinMode(13, OUTPUT);
   pinMode(A0, INPUT);
   
-  
   Serial.println(F("BOOT"));
 
-  AP_params.initialise(&Serial); 
+  AP_params.initialise(&Serial);  
   AP_waypoint.initialise();
   AP_mavlink.initialise(&Serial);
   AP_gps.initialise(&Serial1);

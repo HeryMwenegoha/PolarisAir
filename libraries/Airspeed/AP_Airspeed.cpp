@@ -15,7 +15,7 @@ void  AP_Airspeed::initialise()
 
 bool  AP_Airspeed::enabled()
 {
-	return usable && (*enable == 1.0f);
+	return usable && (*enable == 1);
 }
 
 bool AP_Airspeed::calibrate()
