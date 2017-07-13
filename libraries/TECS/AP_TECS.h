@@ -20,10 +20,10 @@
 	 _update_50Hz_last_usec 		  = 0;
      _update_speed_last_usec 		  = 0;
 	 _update_pitch_throttle_last_usec = 0;
-	 _DT = 0;
-	 _STEdotErrLast = 0;
-	 gravity = 9.81;
-	 _flaring = false;
+	 _DT 							  = 0;
+	 _STEdotErrLast 				  = 0;
+	 gravity 						  = 9.81;
+	 _flaring 						  = false;
    }
    
   /*
@@ -49,6 +49,8 @@
     
    private:
    bool _flaring;
+   
+   uint32_t _underspeed_started_ms;
    
    // Times
    uint64_t _update_50Hz_last_usec;

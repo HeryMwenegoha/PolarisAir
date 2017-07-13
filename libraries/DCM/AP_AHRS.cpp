@@ -629,22 +629,30 @@ float AP_AHRS::airspeed_estimate()
 	float speed = 0;
 	
 	// We have enabled Airspeed Sensor 
+	// No need to go further than this
 	if(_airspeed->enabled()){
-		ret = true; 
 		speed = _airspeed->get_airspeed();
+		speed = constrain_float(speed, 2.0f, 40.0f);
+		return speed;
 	}
 	
 	// Estimate using GPS and wind -> compliments the airspeed sensor
+	// Using wind estimate and gps to estimate airspeed
 	if(_gps.have_gps()){
 		speed = _last_airspeed;
 		ret = true;
 	}
-		
+	
+	// If windmax is zero then airspeed estimate will be used as is::
 	if(ret && WIND_MAX > 0 && _gps.state() == AP_GPS::GPS_FIX_OK)
 	{
-		speed = constrain_float(speed, _gps.groundspeed() - WIND_MAX, _gps.groundspeed() + WIND_MAX);
+		float gnd_speed = _gps.groundspeed();
+		speed 			= constrain_float(speed, 
+								gnd_speed - WIND_MAX, 
+								gnd_speed + WIND_MAX);
 	}
 	
+	// convenience clipping of airspeed value
 	speed = constrain_float(speed, 3.0f, 40);
 
 	return speed;		
@@ -670,10 +678,8 @@ bool AP_AHRS::get_position(Location &loc)const
 
 Vector2f AP_AHRS::groundspeed_vector()
 {	
-	vector3f velocity;
-	if(!_gps.have_gps() 					|| 
-	_gps.status() < AP_GPS::GPS_FIX_TYPE_2D || 
-	_gps.num_sats() < AP_GPS::GPS_MIN_SATS)
+	vector3f velocity(3,0,0);
+	if((_gps.have_gps() == false) || _gps.status() < AP_GPS::GPS_FIX_TYPE_2D || _gps.num_sats() < AP_GPS::GPS_MIN_SATS)
 	{
 		float airspeed = 3;							     // Here we assume airspeed is more valid and we will use this to estimate groundspeed|velocity for dead reckoning navigation
 		if(_airspeed->enabled())

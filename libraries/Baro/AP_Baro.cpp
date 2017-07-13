@@ -18,14 +18,15 @@ void AP_Baro::read()
 {
 	if(_hil_mode == true)
 		return;
-
-	_bmp180.read();
 	
-	// as fast as i can
-	// if(_bmp180.read()){
-	//	update();
-	// }
+	uint64_t now = micros();
+	if((now - _read_usec) >= 10000)
+	{
+		_read_usec = now;
+		_bmp180.read();
+	}
 }
+
 
 void AP_Baro::update()
 {
@@ -44,9 +45,15 @@ void AP_Baro::update()
 		float _raw_alt = 0;
 		float FC       = 20; // 5Hz changes
 		float RC 	   = 1/(2 * PI * FC);
-		float _alpha   = _dt/(_dt + RC);
+		float _alpha   = _dt/(_dt + RC);				
 		
+		// BaroNorm
 		_raw_alt 	   = (44330.0*(1-pow(press/_bmp180.baseline_pressure(),1/5.255)));
+
+		// BaroForm
+		float TempK    = temp + 273.15;
+		float scaling  = press/_bmp180.baseline_pressure();
+		float altitude = 153.8426f * TempK * (1.0f - expf(0.190259f * logf(scaling)));
 				
 		if(isnan(_raw_alt))
 		{
@@ -57,16 +64,15 @@ void AP_Baro::update()
 		_altitude  = _raw_alt;
 		
 		//_altitude  = 0.8f * _altitude + _raw_alt * 0.2f;// _altitude + (_raw_alt - _altitude) * _alpha;
-		
-			
-		#if PRINT
+		// Matlab Analysis File : Press_Temp_BaroRaw_BaroISA
+		#if DEBUG
 		Serial.print(press);
 		Serial.print("	");
 		Serial.print(temp);
 		Serial.print("	");
 		Serial.print(_raw_alt);
 		Serial.print("	");
-		Serial.println(_altitude);
+		Serial.println(altitude);
 		#endif
 	}	
 }

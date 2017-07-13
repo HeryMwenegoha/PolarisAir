@@ -62,10 +62,19 @@ struct vector3
 	void print() const
 	{
 		Serial.print(x);
-		Serial.print(F("  "));
+		Serial.print(F("\t"));
 		Serial.print(y);
-		Serial.print(F("  "));
+		Serial.print(F("\t"));
 		Serial.println(z);
+	}
+	
+	void print(uint8_t i) const
+	{
+		Serial.print(x, i);
+		Serial.print(F("\t"));
+		Serial.print(y, i);
+		Serial.print(F("\t"));
+		Serial.println(z, i);
 	}
 		
 	vector3<T> operator + (const vector3<T> v)const;	
@@ -73,8 +82,10 @@ struct vector3
 	vector3<T> operator - (void)const;	
 	vector3<T> operator * (const T v) const;
 	vector3<T> operator / (const T v) const;
-	T operator * (const vector3<T> v) const; // dot product
+	
+	T operator * (const vector3<T> v) const; 		  // dot product
 	vector3<T> operator % (const vector3<T> v) const; // cross product
+	
 	
 	void normalise(void);	
 	vector3<T>  unit(void)

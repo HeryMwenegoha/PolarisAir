@@ -6,16 +6,14 @@ void  AP_Airspeed::initialise()
 	 bool det = _AP_MS4525DO->init(); // Interrupt is fired here
 	 usable   = calibrate(); 		  // as well as getting p_offset
 	 
-	 if(usable == false)
-		Serial.println("AP_Airspeed:: Airspeed Detected");
-	  else
-		Serial.println("AP_Airspeed:: No Airspeed Detected");
+	 if(usable == true)
+		Serial.println("AP_Airspeed::	MS4525DO	Detected");
 
 }
 
 bool  AP_Airspeed::enabled()
 {
-	return usable && (*enable == 1.0f);
+	return usable && (*enable == 1);
 }
 
 bool AP_Airspeed::calibrate()
@@ -52,10 +50,14 @@ void  AP_Airspeed::read()
 	#if MS4525DO
 	float diff_pressure;
 	
+	if(_hil_mode)		// dont perform measurements in hilmode
+	return;
+	
+	if(usable == false) // dont perform measurements if not detected
+	return;
+	
 	_AP_MS4525DO->measure();
 	
-	if(_hil_mode)	// dont update in hil
-		return;
 	
 	if(_AP_MS4525DO->get_differential_pressure(diff_pressure))	// PSI
 	{

@@ -21,8 +21,8 @@ float AP_L1::update_waypoint(Location prevWP, Location nextWP)
   float ltrackVel   = 0;
   float crossTrack  = 0;
   float nav_bearing = 0;
-  float l1_damping  = AP_params.ParameterStorage.list.L1_damping;
-  float l1_period   = AP_params.ParameterStorage.list.L1_period;
+  float l1_damping  = (float)AP_params.ParameterStorage.list.L1_damping;
+  float l1_period   = (float)AP_params.ParameterStorage.list.L1_period;
   float K_L1        = 4 * l1_damping * l1_damping;  //  Z = 1/sqrt(2) 
   
   // Update currentPosition and GroundSpeed Vectors
@@ -139,8 +139,8 @@ AP_L1::update_loiter(Location centerWP, float radius)
    */
   float latAccDem;
   float wpRadius   = radius;
-  float l1_damping = AP_params.ParameterStorage.list.L1_damping;
-  float l1_period  = AP_params.ParameterStorage.list.L1_period;
+  float l1_damping = (float)AP_params.ParameterStorage.list.L1_damping;
+  float l1_period  = (float)AP_params.ParameterStorage.list.L1_period;
   float K_L1       = 4 * l1_damping * l1_damping;
   
   Vector2f groundSpeedVector = ahrs.groundspeed_vector();

@@ -46,6 +46,7 @@ void AP_HgtFilter_AQ::update(){
 		AltErrorI   += AltError;
 
 		// Gravity vector correction and projection to the local Z
+		// The negavtive just before the acceleration is to make the upward direction positive
 		InstAcc      = -((_ahrs.dcm() * vector3f(_ahrs.acc.x, _ahrs.acc.y, _ahrs.acc.z)).z + 9.81) + (Ki) * AltErrorI;
 
 		// Integrators

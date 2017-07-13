@@ -1,13 +1,20 @@
+/* By Hery A Mwenegoha
+ * Copyright 2016
+ * 18/05/2017 
+ * 1. changed read function
+ * 2. removed serial print if no airspeed is detected. 
+ */
 #ifndef AP_Airspeed_h
 #define AP_Airspeed_h
 #include "MS4525DO.h"
-
 #define MS4525DO	1
+
+
 
 class AP_Airspeed
 {
 	public:
-	AP_Airspeed(float *_enable):
+	AP_Airspeed(uint8_t *_enable):
 	_hil_mode(false),
 	_temperature(20.0f),
 	_airspeed(0.0f),
@@ -41,7 +48,7 @@ class AP_Airspeed
 	float _temperature;
 	bool _hil_mode;
 	bool   usable;
-	float  *enable;
+	uint8_t  *enable;
 };
 
 

@@ -13,6 +13,9 @@
 #define  gcs1pin      38 
 #define  gcs2pin      40
 
+#define  aux1pin      42
+#define  aux2pin      44
+
 class AP_Program
 {
    public:
@@ -74,6 +77,7 @@ class AP_Program
    float climbrate;
    };
    _filtered filtered;
+   byte _flagship;
      
    private:
    AP_Storage  *_parameter; 
@@ -89,6 +93,7 @@ class AP_Program
    
    bool         mission_complete;
    byte         seq;
+   int         _last_seq;
    uint64_t     update_stab_usec;
    uint64_t     auto_usec;
    uint64_t     guided_usec;
@@ -100,6 +105,7 @@ class AP_Program
    boolean      _hdg_hold;
    Location     WPB;
    Location     WPCurrent;
+   Location     WPA; // only for automatic control
    bool         gps_takeoff_enabled;
   
    float throttle;  
@@ -165,12 +171,15 @@ AP_yawcontroller(*ap_dcm)
   _radio      = ap_radio;
   _hdg_hold   = false;
    mission_complete     = false;
+
+   _flagship = 0;
 }
 
 
 void
 AP_Program::initialise(){
   seq            =  0;
+  _last_seq      =  -1;
   home_loiter    = false;
   do_guided      = false;
   guided_complete= false;
@@ -475,12 +484,18 @@ AP_Program::stabilised_control(servo_out &ServoChan)
    */
   float dem_rudder  = _radio->chan4();
 
+
   /*@ Servo Channels 
    */
   ServoChan.chan1 = roll_stabilise(dem_roll, _spd_scaler());
   ServoChan.chan2 = pitch_stabilise(dem_pitch, _spd_scaler());
   ServoChan.chan3 = throttle_stabilise(dem_throttle); 
   ServoChan.chan4 = yaw_stabilise(dem_rudder, ServoChan.chan1, _spd_scaler());
+
+  /*
+  Serial.print(F("Attitude"));Serial.print(" ");Serial.print(dem_roll);Serial.print(" "); Serial.println(dem_pitch);
+  Serial.print(F("Chans"));Serial.print(" ");Serial.print(ServoChan.chan1);Serial.print(" "); Serial.println(ServoChan.chan2);
+  */
   
   /*@ Servo PWM 
    */
@@ -640,26 +655,42 @@ void AP_Program::automatic_control(servo_out &ServoChan){
   /*@ WayPoints Error
    *@ Probably report for no waypoints ~ do nothing
    */
-  if(_waypoint->count.total == 0){
+   if(_waypoint->count.total == 0){
     PRINTLN(F("No Valid Waypoints"));
-  }
+    _flagship = 1;  
+    //return;
+   }
 
    switch(mission_complete)
    {
      case true:
-          loiter_waypoint(ServoChan, _waypoint->WayPoint[seq], _last_altitude);
+          // loiter around home::
+          // OLD
+          // loiter_waypoint(ServoChan, _waypoint->WayPoint[seq], _last_altitude);
+          // NEW
+          loiter_waypoint(ServoChan, _waypoint->homeWP, _last_altitude);
           break;
 
 
      case false:
           byte next_seq = 0;
-          seq == (_waypoint->count.total - 1) ?   next_seq = 0 : next_seq = seq + 1;
-                
+          seq == (_waypoint->count.total - 1) ?   next_seq = 0 : next_seq = seq + 1; // check if we have finished the mission
+        
+          // NEW
+          if(_last_seq != seq){
+            WPA = _waypoint->read(seq);
+            WPB = _waypoint->read(next_seq);
+            _last_seq = seq; 
+          }
+
+          // OLD
+          /*
           Location WPA = _waypoint->WayPoint[seq];
           WPB          = _waypoint->WayPoint[next_seq];
-
+          */
+          
           if(next_seq == 0){
-            _last_altitude = WPA.alt; 
+            _last_altitude                   = WPA.alt; 
             _waypoint->WayPoint[next_seq].alt= WPA.alt;
             _waypoint->WayPoint[next_seq].rad= WPA.rad;
           } 
@@ -687,10 +718,11 @@ void AP_Program::automatic_control(servo_out &ServoChan){
                 }
 
                 float yawDeg = wrap_360(ToDeg(_ahrs->yaw));
-                if((wrap_180(_ahrs->gps().heading() - yawDeg) > 45.0f) && (_ahrs->_wind_estimate().length() < _ahrs->groundspeed_vector().length() * 0.8f)){
+                if((wrap_180(_ahrs->gps().heading() - yawDeg) > 45.0f) && 
+                (_ahrs->_wind_estimate().length() < _ahrs->groundspeed_vector().length() * 0.8f) &&
+                (_ahrs->groundspeed_vector().length() > 3.1f)){
                   PRINT(F("GPS and Compass Covariance Error"));
                 }
-                
               }
             }
 
@@ -705,7 +737,6 @@ void AP_Program::automatic_control(servo_out &ServoChan){
           {
             is_autotakeoff = false;
           }
-
                             
           /*@ If the last waypoint is for landing 
            *@ set autolanding flag to true
@@ -761,7 +792,6 @@ void AP_Program::automatic_control(servo_out &ServoChan){
               }  
             }           
           }
-
                          
           /*@ L1
            *@ update_waypoiny(previous_waypoint, next_waypoint) 
@@ -770,7 +800,6 @@ void AP_Program::automatic_control(servo_out &ServoChan){
           if(next_seq == 0){
             accel     = AP_l1.update_loiter(_waypoint->WayPoint[next_seq], _waypoint->WayPoint[next_seq].rad);
           }
-
           
           /*@ Demanded Equivalent Airspeed
            */
@@ -787,7 +816,6 @@ void AP_Program::automatic_control(servo_out &ServoChan){
           {
             EAS_demanded  = _parameter->ParameterStorage.list.cru_speed;
           }
-
         
           /*@ TECS 
            *@ update_pitcg_throttle(demanded_altitude, demanded_speed, navigation command)
@@ -926,7 +954,6 @@ void AP_Program::automatic_control(servo_out &ServoChan){
 
 
 void  AP_Program::loiter_waypoint(servo_out &ServoChan, Location WPLoiter, float altitude){
-
   /*@ L1
    *@ update_loiter(loiter_waypoint, loiter_radius in metres) 
    */
@@ -935,7 +962,7 @@ void  AP_Program::loiter_waypoint(servo_out &ServoChan, Location WPLoiter, float
   /*@ TECS 
    *@ update_pitcg_throttle(demanded_altitude, demanded_speed, Flight_Command)
    */
-  AP_tecs.update_pitch_throttle(altitude, _parameter->ParameterStorage.list.cru_speed, WPB.cmd);
+  AP_tecs.update_pitch_throttle(altitude, _parameter->ParameterStorage.list.cru_speed, FLIGHT_LOITER_UNLIM);
 
   /*@ Stabilise
    *@ Roll 
@@ -977,7 +1004,7 @@ void  AP_Program::loiter_waypoint(servo_out &ServoChan, Location WPLoiter, float
    */
   float airspeed;
   float _spd_scaler; 
-  float ref_speed  = (_parameter->ParameterStorage.list.min_speed + _parameter->ParameterStorage.list.max_speed) * 0.5f;
+  float ref_speed  = static_cast<float>((_parameter->ParameterStorage.list.min_speed + _parameter->ParameterStorage.list.max_speed) * 0.5f);
   airspeed         = constrain_float(_ahrs->airspeed_estimate(), _parameter->ParameterStorage.list.min_speed, _parameter->ParameterStorage.list.max_speed);   
   _spd_scaler      = ref_speed/airspeed;   
 
@@ -989,22 +1016,22 @@ void  AP_Program::loiter_waypoint(servo_out &ServoChan, Location WPLoiter, float
   float elevator_out = map_float(AP_pitchcontroller.servo_out(_angle_err_p, _meas_rate_p, _spd_scaler), -45, 45, _parameter->ParameterStorage.list.min_pitch_aux, _parameter->ParameterStorage.list.max_pitch_aux);;
   float throttle_out = Throutf;
   float rev_rud_sig = _parameter->ParameterStorage.list.rev_yaw_sig;
-  float rudder_out   = (ServoChan.chan1 - (0.5f * (_parameter->ParameterStorage.list.min_roll_aux + _parameter->ParameterStorage.list.max_roll_aux))) * _parameter->ParameterStorage.list.rudder_mix; 
+  float rudder_out   = (ServoChan.chan1 - static_cast<float>(0.5f * (_parameter->ParameterStorage.list.min_roll_aux + _parameter->ParameterStorage.list.max_roll_aux))) * _parameter->ParameterStorage.list.rudder_mix; 
   if(fabs(rev_rud_sig) == 1.0f)
   {
     rudder_out *= rev_rud_sig;
   }
-  rudder_out     += 0.5f * (_parameter->ParameterStorage.list.min_yaw_aux + _parameter->ParameterStorage.list.max_yaw_aux);
+  rudder_out     += static_cast<float>(0.5f * (_parameter->ParameterStorage.list.min_yaw_aux + _parameter->ParameterStorage.list.max_yaw_aux));
   rudder_out      = constrain_float(rudder_out, _parameter->ParameterStorage.list.min_yaw_aux, _parameter->ParameterStorage.list.max_yaw_aux);
   
 
   // Direct Mixing Algorithm
-  float aileron_midpoint    = 0.5f * (_parameter->ParameterStorage.list.min_roll_aux +  _parameter->ParameterStorage.list.max_roll_aux);
+  float aileron_midpoint    = static_cast<float>(0.5f * (_parameter->ParameterStorage.list.min_roll_aux +  _parameter->ParameterStorage.list.max_roll_aux));
   float delta_output        = aileron_out   - aileron_midpoint;
   float aileron_override    = _radio->chan1();
   float delta_override      = aileron_override - aileron_midpoint;
 
-  float elevator_midpoint   = 0.5f * (_parameter->ParameterStorage.list.min_pitch_aux +  _parameter->ParameterStorage.list.max_pitch_aux);
+  float elevator_midpoint   = static_cast<float>(0.5f * (_parameter->ParameterStorage.list.min_pitch_aux +  _parameter->ParameterStorage.list.max_pitch_aux));
   float delta_output_elev   = elevator_out - elevator_midpoint;
   float elevator_override   = _radio->chan2();
   float delta_override_elev = elevator_override - elevator_midpoint;
@@ -1037,7 +1064,7 @@ void  AP_Program::loiter_waypoint(servo_out &ServoChan, Location WPLoiter, float
 
 
 
-/*@ After X seconds of loiter go home
+/*@ After X seconds of loiter go home 
  *@ Before timer start check distance
  */
 void  AP_Program::guided_navigation(servo_out &ServoChan){
@@ -1112,7 +1139,7 @@ void  AP_Program::guided_navigation(servo_out &ServoChan){
                 
   /*@ TECS Demanded Throttle
    */
-  float dem_thr = AP_tecs.throttle_dem() * (_parameter->ParameterStorage.list.max_thr_aux - _parameter->ParameterStorage.list.min_thr_aux) + _parameter->ParameterStorage.list.min_thr_aux;           
+  float dem_thr = AP_tecs.throttle_dem() * (float)(_parameter->ParameterStorage.list.max_thr_aux - _parameter->ParameterStorage.list.min_thr_aux) + (float)(_parameter->ParameterStorage.list.min_thr_aux);           
 
                            
   /*@ Outputs

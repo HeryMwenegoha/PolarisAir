@@ -38,7 +38,7 @@ void AP_INS_Backend::filter_raw_sample_gyro(uint8_t instance , const vector3f &_
 }
 
 void AP_INS_Backend::filter_raw_sample_accel(uint8_t instance, const vector3f &_raw_accel, float dt)
-{
+{	
 	if(_imu->_low_pass_cutoff_accel <= 0)
 		_imu->_low_pass_cutoff_accel = 5;
 	float _RC_accel 		  = 1/(2 * PI * _imu->_low_pass_cutoff_accel);
@@ -47,6 +47,8 @@ void AP_INS_Backend::filter_raw_sample_accel(uint8_t instance, const vector3f &_
 	
 	if(_imu->_filtered_accel[instance].is_nan() || _imu->_filtered_accel[instance].is_inf())
 		_imu->_filtered_accel[instance].zero();
-		
+	
+	//Serial.print(dt,3);Serial.print("\t");Serial.print(_raw_accel.z * 9.81f/8192.0f);Serial.print("\t");Serial.println(_imu->_filtered_accel[instance].z * 9.81f/8192.0f);
+	
 	_imu->_new_accel_data[instance] = true;
 }

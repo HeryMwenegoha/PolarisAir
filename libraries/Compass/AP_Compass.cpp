@@ -1,56 +1,84 @@
 #include "AP_Compass.h"
+/*
+ * By Hery Mwenegoha
+ * Copyright 2016
+ * Compass Activity Limited to +/- 1.3 Gauss
+ * Allowance for only one Compass
+ * If an external I2C Compass is connected on the I2C Port, it might corrupt manipulation
+ */
 AP_Compass AP_compass;
 
+
+// Read Compass at the prescribed compass speed and update mag values at 10Hz.
+// 10Hz update cycles
 void AP_Compass::update()
 {
-	// Read Compass at the prescribed compass speed and update mag values at 10Hz.
-	// 10Hz update cycles
 	if(_hil_mode == true)
 		return;
-			
-	//_raw_mag.printV() ; 					// LSB	
 	
+	float mag_scale_xy = 0;			
+	float mag_scale_z  = 0;			
 	
-	//float mag_scale_xy = 1/855.0f;			// POLOLU XY GASS/LSB 1.9GAUSS
-	//float mag_scale_z  = 1/760.0f;			// POLOLU Z GAUSS/LSB 1.9GAUSS
+	switch(instance)
+	{
+		case LSM303D:
+		mag_scale_xy  = 1.0f/1100.0f; 			
+		mag_scale_z   = 1.0f/980.0f;		
+		break;
+		
+		case HMC5883:
+		mag_scale_xy  = 1.0f/1090.0f; 			
+		mag_scale_z   = 1.0f/1090.0f;	
+		break;
+		
+		case AK8963:
+		mag_scale_xy  = 0.15f; 			
+		mag_scale_z   = 0.15f;	
+		break;
+	}	
 	
-	float mag_scale_xy = 1/1100.0f;			// POLOLU XY GASS/LSB 1.3GAUSS
-	float mag_scale_z  = 1/980.0f;			// POLOLU Z GAUSS/LSB 1.3GAUSS
+
+	// Gives a +/- 1.3 Gauss Limit
+	_raw_mag.x = _raw_mag_adc.x * mag_scale_xy;
+	_raw_mag.y = _raw_mag_adc.y * mag_scale_xy;
+	_raw_mag.z = _raw_mag_adc.z * mag_scale_z;
+		
+	// Convert to miligauss easier to deal with
+	_raw_mag    = _raw_mag * 1000;
 	
-	//float mag_scale    = 0.00091743f;		// MPU - GAUSS/LSB	
+	//determine_max(_raw_mag, value.max);
+	//determine_min(_raw_mag, value.min);
+	vector3f  offsets = value.max + value.min;
+	offsets 		  = offsets * 0.5f;
 	
-	// For LSM303D
-	_mag_field.x = _raw_mag.x * mag_scale_xy;
-	_mag_field.y = _raw_mag.y * mag_scale_xy;
-	_mag_field.z = _raw_mag.z * mag_scale_z;
+	vector3f  scaling = value.max - value.min;
+	scaling			  = scaling * 0.5f;	
+	float avg_scale   = (scaling.x + scaling.y + scaling.z) / 3;
+	
+	float x_scale     = avg_scale / scaling.x;
+	float y_scale     = avg_scale / scaling.y;
+	float z_scale     = avg_scale / scaling.z;
+	
+	_mag_field.x 	  = (_raw_mag.x - offsets.x) * x_scale;
+	_mag_field.y 	  = (_raw_mag.y - offsets.y) * y_scale;
+	_mag_field.z	  = (_raw_mag.z - offsets.z) * z_scale;
+	
+	// Some Debug Prints
+	// _raw_mag.print(0);
+	// _raw_mag_adc.print(0);
+	// _mag_field.print(0);
+	
 	
 	_last_update_msec = millis();
 	
-	
-	if(_raw_mag.is_zero()){
+	if(_raw_mag.is_zero())
+	{
 		_have_compass = false;
-		//Serial.println("AP_Compass:: No Compass Detected");
-	}else{
-		_have_compass = true;
 	}
-				
-	
-	/*
-	Serial.print(_mag_field.x,4);
-	Serial.print("	");
-	Serial.print(_mag_field.y, 4);
-	Serial.print("	");
-	Serial.println(_mag_field.z, 4);
-	*/
-	
-	/*
-	Serial.print(_raw_mag.x);
-	Serial.print("	");
-	Serial.print(_raw_mag.y);
-	Serial.print("	");
-	Serial.println(_raw_mag.z);
-	*/		
-					
+	else
+	{
+		_have_compass = true;
+	}				
 }
 
 vector3f AP_Compass::get_field()
@@ -128,7 +156,7 @@ void  AP_Compass::setHil(const float &hilroll, const float &hilpitch, const floa
 	B_earth.z = dummy_field * sin(ToRad(dummy_inclination));// inclination at SEATTLE KSEA	
 	R.from_euler(hilroll, hilpitch,hilyaw);
 	B_body     = R.mul_transpose(B_earth);
-	
+	instance   = HMC5883;
 	uint32_t _current_time = millis();
 	if(_current_time - _update_msec >= 50)
 	{
@@ -149,3 +177,52 @@ uint32_t AP_Compass::last_update_msec()
 	return _last_update_msec;
 }
 
+
+void AP_Compass::determine_max(vector3f &value1, vector3f &value2){
+	
+	bool trigger = false;
+	
+	if(value1.x > value2.x){
+		value2.x = value1.x;
+		trigger = true;
+	}
+	
+	if(value1.y > value2.y){
+		value2.y = value1.y;
+		trigger = true;
+	}
+	
+	if(value1.z > value2.z){
+		value2.z = value1.z;
+		trigger = true;
+	}
+	
+	if(trigger){
+		Serial.print(F("Max:	"));
+		value2.print(0);
+	}
+}
+
+void AP_Compass::determine_min(vector3f &value1, vector3f &value2){
+	bool trigger = false;
+	
+	if(value1.x < value2.x){
+		value2.x = value1.x;
+		trigger = true;
+	}
+	
+	if(value1.y < value2.y){
+		value2.y = value1.y;
+		trigger = true;
+	}
+	
+	if(value1.z < value2.z){
+		value2.z = value1.z;
+		trigger = true;
+	}
+	
+	if(trigger){
+		Serial.print(F("Min:	"));
+		value2.print(0);
+	}
+}

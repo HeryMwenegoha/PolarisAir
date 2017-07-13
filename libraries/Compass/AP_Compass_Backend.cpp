@@ -2,10 +2,15 @@
 
 AP_Compass_Backend AP_compass_backend;
 
+void  AP_Compass_Backend::register_device(int8_t instance){
+	_compass->instance = instance;
+	_compass->registered_devices++;
+}
+
 void AP_Compass_Backend::update_magnetometer()
 {
 	if(_compass->_new_data == true){
-		_compass->_raw_mag = _compass->_filtered_adc;
+		_compass->_raw_mag_adc = _compass->_filtered_adc;
 		_compass->_new_data = false;
 	}	
 }

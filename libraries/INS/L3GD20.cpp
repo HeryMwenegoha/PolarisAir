@@ -5,8 +5,8 @@
 
 /* CTRL_REG1    0x20
  * Item  Bit	Value
- * ODR  (7:6)  	760Hz 
- * BW   (5:4)  	30Hz 
+ * ODR  (7:6)  	95Hz 
+ * BW   (5:4)  	25Hz 
  * PD   (3)	  	Normal  
  * Zen  (2)	  	Enabled
  * Yen  (1)	  	Enabled
@@ -150,14 +150,9 @@
 
 bool AP_L3GD20::initialise()
 {
-	Wire.begin();	
-	delay(50);
-	Wire.setClock(I2CSPEED);
-	delay(50);
-	
 	// check product ID
 	if(PRODUCT_ID != (Wire.read8(ADRESS, WHO_AM_I) >> 1)){
-		Serial.println(F("AP_L3GD20:	Gyro	Not	Found"));
+		//Serial.println(F("AP_L3GD20:	Gyro	Not	Found"));
 		_have_sens = false;
 		return false;
 	}
@@ -223,7 +218,7 @@ void AP_L3GD20::accumulate()
 			uint32_t _start_msec = millis();
 			while(Wire.available() < 6){
 				if((millis() - _start_msec) >= 50){
-					Serial.println("L3GD20	I2C	Timeout");
+					Serial.println("L3GD20-G	I2C	Timeout");
 					return;
 				}
 			}
@@ -243,8 +238,7 @@ void AP_L3GD20::accumulate()
 				
 			if(_dt_gyro > 1.0f){
 				_dt_gyro = 0.01f;
-			}
-			
+			}		
 			_backend->filter_raw_sample_gyro(0, _gyro_vector, _dt_gyro);
 						
 			uint64_t _last_time = micros();

@@ -1,6 +1,7 @@
 AP_AHRS	KEYWORD1
 update	KEYWORD2
 airspeed_estimate	KEYWORD2
+altitude_estimate	KEYWORD2
 setHil	KEYWORD2
 healthy	KEYWORD2
 get_position	KEYWORD2

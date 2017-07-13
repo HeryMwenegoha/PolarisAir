@@ -133,50 +133,41 @@ void 	 AP_INS::update()
 		return;
 	}
 	
-	/* Primary L3Gd20  includes the LSM303*/
-    _accel_offset[L3Gd20] = vector3f(
+	_accel_offset[L3Gd20] = vector3f(
+	_parameters->ParameterStorage.list.Accel2_offsetX,
+	_parameters->ParameterStorage.list.Accel2_offsetY,
+	_parameters->ParameterStorage.list.Accel2_offsetZ); 
+	
+    _accel_offset[MPU6000] = vector3f(
 	_parameters->ParameterStorage.list.Accel2_offsetX,
 	_parameters->ParameterStorage.list.Accel2_offsetY,
 	_parameters->ParameterStorage.list.Accel2_offsetZ); 
 
-	_accel_scale[L3Gd20] = vector3f(
+	_accel_scale = vector3f(
 	_parameters->ParameterStorage.list.Accel2_lsbX,
 	_parameters->ParameterStorage.list.Accel2_lsbY,
 	_parameters->ParameterStorage.list.Accel2_lsbZ);	
 	
-	/* Secondary MPU6000 */
-	_accel_offset[MPU6000] = vector3f(
-	_parameters->ParameterStorage.list.Accel2_offsetX,
-	_parameters->ParameterStorage.list.Accel2_offsetY,
-	_parameters->ParameterStorage.list.Accel2_offsetZ); 
-	
-	_accel_scale[MPU6000]= vector3f(
-	_parameters->ParameterStorage.list.Accel2_lsbX,
-	_parameters->ParameterStorage.list.Accel2_lsbY,
-	_parameters->ParameterStorage.list.Accel2_lsbZ);
+
 	
 	for(int i = 0; i < 3; i++)
 	{
 		_raw_accel[i]  = _accel_[i];  			// ADC LSB
 		_raw_gyro[i]   = _gyro_[i];   			// ADC LSB
-		
-		_gyro[L3Gd20]  = (_raw_gyro[L3Gd20]  - _gyro_offset[L3Gd20])  * radiansf(0.0175);		// radians per second 500DPS
-		_gyro[MPU6000] = (_raw_gyro[MPU6000] - _gyro_offset[MPU6000]) * radiansf(0.0152672f);	// radians per second 500DPS
-		
-		//(_gyro[L3Gd20] * degreesf()).printV();
-		//(_gyro[MPU6000] * degreesf()).printV();
-		
-		_accel[L3Gd20].x  = (_raw_accel[L3Gd20].x  - _accel_offset[L3Gd20].x)  * (9.81/_accel_scale[L3Gd20].x);
-		_accel[L3Gd20].y  = (_raw_accel[L3Gd20].y  - _accel_offset[L3Gd20].y)  * (9.81/_accel_scale[L3Gd20].y);
-		_accel[L3Gd20].z  = (_raw_accel[L3Gd20].z  - _accel_offset[L3Gd20].z)  * (9.81/_accel_scale[L3Gd20].z);		
-		
-		_accel[MPU6000].x = (_raw_accel[MPU6000].x - _accel_offset[MPU6000].x) * (9.81/_accel_scale[MPU6000].x);
-		_accel[MPU6000].y = (_raw_accel[MPU6000].y - _accel_offset[MPU6000].y) * (9.81/_accel_scale[MPU6000].y);
-		_accel[MPU6000].z = (_raw_accel[MPU6000].z - _accel_offset[MPU6000].z) * (9.81/_accel_scale[MPU6000].z);
-		
-		// _accel[L3Gd20].printV();
-		// _accel[MPU6000].printV();
 	}
+
+	_gyro[L3Gd20]  = (_raw_gyro[L3Gd20]   - _gyro_offset[L3Gd20])  * radiansf(0.0175);		// radians per second 500DPS
+	_gyro[MPU6000] = (_raw_gyro[MPU6000]  - _gyro_offset[MPU6000]) * radiansf(0.0152672f);	// radians per second 500DPS
+	_gyro[L3Gd20H] = (_raw_gyro[L3Gd20H]  - _gyro_offset[L3Gd20H]) * radiansf(0.0175);
+			
+	_accel[L3Gd20].x  = (_raw_accel[L3Gd20].x  - _accel_offset[L3Gd20].x)  * (9.81/_accel_scale.x);
+	_accel[L3Gd20].y  = (_raw_accel[L3Gd20].y  - _accel_offset[L3Gd20].y)  * (9.81/_accel_scale.y);
+	_accel[L3Gd20].z  = (_raw_accel[L3Gd20].z  - _accel_offset[L3Gd20].z)  * (9.81/_accel_scale.z);		
+	
+	_accel[MPU6000].x = (_raw_accel[MPU6000].x - _accel_offset[MPU6000].x) * (9.81/_accel_scale.x);
+	_accel[MPU6000].y = (_raw_accel[MPU6000].y - _accel_offset[MPU6000].y) * (9.81/_accel_scale.y);
+	_accel[MPU6000].z = (_raw_accel[MPU6000].z - _accel_offset[MPU6000].z) * (9.81/_accel_scale.z);
+	
 		
 	// Grab values from Backend and apply all the neccessary scaling and whatnots
 	if(((_accel[MPU6000].is_zero() || _accel[MPU6000].is_nan()) && (_gyro[MPU6000].is_zero() || _gyro[MPU6000].is_nan())) &&

@@ -25,8 +25,7 @@ class AP_INS
 			_accel[i].zero(); 
 			_raw_gyro[i].zero(); 
 			_raw_accel[i].zero();
-			_accel_scale[i].zero();
-			_gyro_scale[i].zero();			
+			_accel_scale.zero();
 			_gyro_offset[i].zero();
 			_accel_offset[i].zero();
 			_offset_initial[i].zero();
@@ -41,8 +40,14 @@ class AP_INS
 			_new_gyro_data[i] = false;
 			_new_accel_data[i] = false;
 		}
-		_low_pass_cutoff_gyro  = 20; // Used to be 50Hz
-		_low_pass_cutoff_accel = 7; // Used to be 10Hz
+		#if VERSION0bbb
+		_low_pass_cutoff_gyro  = 50;  // Used to be 50Hz
+		_low_pass_cutoff_accel = 10;  // Used to be 10Hz	
+		#else
+		// I have used this with no problems
+		_low_pass_cutoff_gyro  = 20;  // Used to be 50Hz - Ardupilot uses 20Hz for gyro filter
+		_low_pass_cutoff_accel = 7;   // Used to be 10Hz - Ardupilot Uses 10Hz for accel filter
+		#endif
 		instance 			   = 0;
 	}
 	
@@ -92,8 +97,8 @@ class AP_INS
 	
 	private:
 	uint8_t  _product_id[3];
-	vector3f _accel_scale[3];
-	vector3f _gyro_scale[3];	
+	vector3f _accel_scale;
+	//vector3f _gyro_scale[3];	
 	vector3f _gyro_offset[3];
 	vector3f _accel_offset[3];
 	vector3f _offset_initial[3];
