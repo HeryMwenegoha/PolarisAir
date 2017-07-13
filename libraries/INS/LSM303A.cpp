@@ -25,15 +25,6 @@
 bool AP_LSM303A::initialise()
 {
 	/*
-	 * Initialise I2C
-	 */
-	_i2c->begin();
-	delay(50);
-	_i2c->setClock(I2CSPEED);
-	delay(50);
-	
-	
-	/*
      * Set ODR to 100HZ
 	 */
 	_i2c->write8(ACCEL_ADDRESS, CTRL_REG1_A, (byte)(REG1A_100Hz_Normal_XYZEN));
@@ -41,7 +32,7 @@ bool AP_LSM303A::initialise()
 	_i2c->write8(ACCEL_ADDRESS, CTRL_REG1_A, (byte)(REG1A_100Hz_Normal_XYZEN));
 	delay(15);		
 	if(_i2c->read8(ACCEL_ADDRESS, CTRL_REG1_A) != 0x57){
-		Serial.println(F("AP_LSM303A:	Accelerometer	Not	Found"));
+		//Serial.println(F("AP_LSM303A:	Accelerometer	Not	Found"));
 		_have_sens = false;
 		return false;
 	}delay(10);
@@ -183,7 +174,9 @@ void AP_LSM303A::accumulate()
 
 			//_accel_vector.x = (_accel_vector.x /8192) * 9.81f;
 			//_accel_vector.y = (_accel_vector.y /8192) * 9.81f;
-			//_accel_vector.z = (_accel_vector.z /8192) * 9.81f;		
+			//_accel_vector.z = (_accel_vector.z /8192) * 9.81f;
+
+			//_accel_vector.print();			
 			
 			if(_dt_accel  > 1.0f)
 				_dt_accel = 0.01f;

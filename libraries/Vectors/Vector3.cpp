@@ -39,7 +39,7 @@ T	vector3<T>::operator * (const vector3<T> v) const
 template <typename T>
 vector3<T> vector3<T>::operator % (const vector3<T> v) const
 {
-	return vector3<T>((y*v.z - z*v.y), (z*v.x - x*v.z), (x*v.y - y*v.x));
+	return vector3<T>((y*v.z - z*v.y), (z*v.x - x*v.z), (x*v.y - y*v.x)); // cross product
 }
 
 template <typename T>

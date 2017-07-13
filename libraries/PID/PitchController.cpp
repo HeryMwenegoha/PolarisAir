@@ -6,8 +6,8 @@ void AP_PitchController::initialise(AP_Storage *Storage,AP_AHRS *_AP_AHRS)
 	gains.ki 	  = &(Storage->ParameterStorage.list.pitch_ki);	
 	gains.kd 	  = &(Storage->ParameterStorage.list.pitch_kd);	
 	gains.tau	  = &(Storage->ParameterStorage.list.pitch_tau);
-	gains.rmax 	  = (float *)&(Storage->ParameterStorage.list.pitch_rmax);	
-	gains.imax    = (float *)&(Storage->ParameterStorage.list.pitch_imax);		
+	gains.rmax 	  = &(Storage->ParameterStorage.list.pitch_rmax);	
+	gains.imax    = &(Storage->ParameterStorage.list.pitch_imax);		
 	gains.roll_ff = &(Storage->ParameterStorage.list.PTCH2SRV_RLL);
 	
 	_ahrs = _AP_AHRS;
@@ -46,12 +46,12 @@ float AP_PitchController::_turn_coordination()
 	}
 	else
 	{
-		_rate_out = 0;
+		_rate_out  = 0;
 	}
 	
 	if(inverted)
 	{
-		_rate_out = -_rate_out;
+		_rate_out  = -_rate_out;
 	}
 	
 	/*

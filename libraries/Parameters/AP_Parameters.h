@@ -101,9 +101,9 @@ const char ACCEL1_LSBY[]	 PROGMEM = "ACCEL1_LSBY";
 const char ACCEL1_LSBZ[]	 PROGMEM = "ACCEL1_LSBZ";
 */
 
-const char ACCEL2_OFFSETX[]  PROGMEM  = "ACCEL2_OFFSETX";
-const char ACCEL2_OFFSETY[]  PROGMEM  = "ACCEL2_OFFSETY";
-const char ACCEL2_OFFSETZ[]  PROGMEM  = "ACCEL2_OFFSETZ";
+const char ACCEL2_OFFSETX[]  PROGMEM = "ACCEL2_OFFSETX";
+const char ACCEL2_OFFSETY[]  PROGMEM = "ACCEL2_OFFSETY";
+const char ACCEL2_OFFSETZ[]  PROGMEM = "ACCEL2_OFFSETZ";
 const char ACCEL2_LSBX[]	 PROGMEM = "ACCEL2_LSBX";
 const char ACCEL2_LSBY[]	 PROGMEM = "ACCEL2_LSBY";
 const char ACCEL2_LSBZ[]	 PROGMEM = "ACCEL2_LSBZ";
@@ -300,7 +300,7 @@ const _GROUP_DATA GROUP_DATA[] PROGMEM =
 	GROUP_INFO(53, 	I8,		122,1,	AUTO_PITCHMIN,   	-15),
 	GROUP_INFO(54, 	I8,		123,1,	LAND_PITCH_MAX,		5),
 	GROUP_INFO(55,	I8,		124,1,	LAND_PITCH_MIN,  	-5),
-	GROUP_INFO(56,	U8,		125,1,	ARSPD_ENABLED,		0),
+	GROUP_INFO(56,	U8,		125,1,	ARSPD_ENABLED,		1),
 	GROUP_INFO(57,	U8,		126,1,	STALL_PREVENT,		1),
 	GROUP_INFO(58,	FLOAT,	127,4,	POWERMODULE_GAIN,	0.047),
 	
@@ -311,6 +311,25 @@ const _GROUP_DATA GROUP_DATA[] PROGMEM =
 	GROUP_INFO(62, 	U16,	137,2,	ACCEL2_LSBX,		8192),
 	GROUP_INFO(63, 	U16,	139,2,	ACCEL2_LSBY,		8192),
 	GROUP_INFO(64,	U16,	141,2,	ACCEL2_LSBZ,		8192),
+};
+
+struct _Param_t{
+	
+   public:
+   _Param_t(){
+	   index = 0;
+	  type  = 0;
+      val   = 0;
+      count = 0;	
+	  strcpy_P(id, (char *)pgm_read_word(&GROUP_DATA[0].id));
+   }
+   
+   
+   uint8_t    type;
+   char 	  id[16];
+   float      val;
+   uint16_t   count;
+   uint16_t   index;
 };
 
 #define GROUP_DATA_SIZE 65
@@ -431,14 +450,6 @@ class AP_Storage
    */
   void initialise(HardwareSerial *_port);  
   
-  /*
-   * send a list of parameters to the ground control station
-   */
-  #if MAVLINK_OLD_IMPLEMENTATION
-  void SendParamList(byte UAV_ID);  
-  #else
-  void SendParamList(byte UAV_ID, mavlink_message_t *msg);  
-  #endif
   
   /*
    * Function called once a parameter has been received -> check proper mavlink message
@@ -446,35 +457,43 @@ class AP_Storage
    * Checks the received parameter ID and writes to storage
    *
    */
-  #if MAVLINK_OLD_IMPLEMENTATION
-  void UpdateStorage(const byte UAV_ID, const char param_id[16], float param_value);
-  #else
-  void UpdateStorage(const byte UAV_ID, const char param_id[16], float param_value, mavlink_message_t *msg);
-  #endif
+  void UpdateStorage(const char param_id[16], float param_value, bool write_eeprom);
 
-  /*@ read all parameters from storage
+  
+  /*
+   * read all parameters from storage
    */
   void ReadAll(void);
   
   
-  /*@ writes all parameters to storage
+  /*
+   * writes all parameters to storage
    */
   void WriteAll(void);  
   
-  float   get_param(const char param_id[16]);
-  float   get_param(const uint8_t x);
-  
-  private:
   
   /*
-   * declare a union to store both float and buffer in same memory space.
-   */
-  HardwareSerial *Port;
-  uint8_t get_type(const uint8_t x);
-  uint8_t get_type(const char param_id[16]);
-  uint8_t find_parameter(const char param_id[16]);
+   * returns a struct parameter given parameter index 
+   */ 
+  _Param_t    get_param(const char param_id[16]);
   
-  void print_all();
+  
+  /*
+   * returns a struct parameter given parameter id
+   */
+  _Param_t    get_param(const uint16_t x); 
+
+
+  /*
+   * prints all parameters
+   */
+  void     print_all();  
+  
+  private:
+  HardwareSerial *Port;
+  uint8_t  get_type(const uint8_t x);
+  uint8_t  get_type(const char param_id[16]);
+  uint16_t get_index(const char param_id[16]);
   
   union _f_un
   {
@@ -506,53 +525,17 @@ class AP_Storage
 	uint8_t buffer[sizeof(int16_t)];
   }; 
   
-  /*@ Send a Parameter over serialPort
-   *@ Sends a single parameter over serial port with mavlink protocol
-   */
-  #if MAVLINK_OLD_IMPLEMENTATION
-  void mavlink_sendParameter(byte uav_id, const char param_id[16], float param_value, uint8_t param_type, uint16_t param_index);
-  #else
-  void mavlink_sendParameter(byte uav_id, const char param_id[16], float param_value, uint8_t param_type, uint16_t param_index, mavlink_message_t *msg);
-  #endif
+  union _i32_un
+  {
+	int32_t val;
+	uint8_t buffer[sizeof(int32_t)];
+  };
+  
+  union _u32_un
+  {
+	uint32_t val;
+	uint8_t buffer[sizeof(uint32_t)];
+  };
 };
 
 extern AP_Storage  AP_params;
-
-
-/*
-template<typename T>
-struct PGM_Stuff
-{  
-	PGM_Stuff<T>(){
-		
-	}
-	
-	T pgm_read_val(const uint8_t types, int8_t idx)
-	{
-		float val  = pgm_read_float(&GROUP_DATA[idx].val);
-		switch(types){
-			case (uint8_t)FLOAT:
-			return static_cast<float>(val);
-			
-			case (uint8_t)U8:
-			return static_cast<uint8_t>(val);		
-				
-			case (uint8_t)I8:
-			return static_cast<int8_t>(val);
-			
-			case (uint8_t)U16:
-			return static_cast<uint16_t>(val);	
-			
-			case (uint8_t)I16:
-			return static_cast<int16_t>(val);
-		}
-	}
-};
-typedef PGM_Stuff<float> PGM_Stufff;
-typedef PGM_Stuff<int8_t> PGM_Stuffi;
-typedef PGM_Stuff<uint8_t> PGM_Stuffu;
-
-template float 	 PGM_Stuff<float>::pgm_read_val(const uint8_t types, int8_t idx);
-template uint8_t PGM_Stuff<uint8_t>::pgm_read_val(const uint8_t types, int8_t idx);
-template int8_t  PGM_Stuff<int8_t>::pgm_read_val(const uint8_t types, int8_t idx);
-*/

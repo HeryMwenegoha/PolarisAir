@@ -1,16 +1,19 @@
 #pragma once
 #include "Arduino.h"
 
-#define HIL_SIM         0
+#define HIL_SIM         1
 #define mainloop_rate   20
 #define UAV             1     
 #define GCS             255  // Ground Control Station
 #define MSP             254  // Mission Planning
 #define HEADER_LEN      8
-#define  PRINT(x)     Serial.print(x)
-#define  PRINT_TAB()  Serial.print("\t")
-#define  PRINT_LINE() Serial.print("\n")
-#define  PRINTLN(x)   Serial.println(x)
+#define  PRINT(x)      Serial.print(x)
+#define  PRINT_TAB()   Serial.print("\t")
+#define  PRINT_LINE()  Serial.print("\n")
+#define  PRINTLN(x)    Serial.println(x)
+#define  PRINTTABLN2(x, y) {Serial.print(x); Serial.print("\t"); Serial.println(y);}
+#define  PRINTTAB(x)   {Serial.print(x); Serial.print("\t");}
+#define  PRINTTABLN(x) {Serial.print(x); Serial.println("\t");}
 
 typedef short      i16;
 typedef unsigned short u16;

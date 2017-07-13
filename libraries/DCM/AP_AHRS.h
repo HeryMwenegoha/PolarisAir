@@ -136,6 +136,7 @@ class AP_AHRS : public AP_AHRS_BASE
 	AP_Airspeed &airspeed(){
 		return *_airspeed;
 	}
+	
 	vector3f &_wind_estimate(){
 		return wind;
 	}

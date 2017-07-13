@@ -3,7 +3,7 @@
 
 #define MYPIN1 A8
 #define MYPIN2 A9
-#define MYPIN3 A10
+#define MYPIN3 A10 
 #define MYPIN4 A11
 #define MYPIN5 A12
 #define MYPIN6 A13

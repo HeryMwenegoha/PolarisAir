@@ -1,8 +1,15 @@
+/* By Hery A Mwenegoha
+ * Copyright 2016
+ * 18/05/2017 
+ * 1. changed read function
+ * 2. removed serial print if no airspeed is detected. 
+ */
 #ifndef AP_Airspeed_h
 #define AP_Airspeed_h
 #include "MS4525DO.h"
-
 #define MS4525DO	1
+
+
 
 class AP_Airspeed
 {

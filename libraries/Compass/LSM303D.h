@@ -3,6 +3,9 @@
 #include "Wire.h"
 #include "Vectors.h"
 
+/*
+`* 
+ */
 class AP_LSM303D : public AP_Compass_Backend
 {
 	public:
@@ -10,9 +13,9 @@ class AP_LSM303D : public AP_Compass_Backend
 	_backend(&AP_compass_backend)
 	{
 		_last_time_us = 0;
-		_dt_mag = 0;
-		_update_us = 0;
-		_have_sens = false;
+		_dt_mag       = 0;
+		_update_us    = 0;
+		_have_sens    = false;
 	}
 	
 	void initialise();
@@ -25,6 +28,5 @@ class AP_LSM303D : public AP_Compass_Backend
 	uint64_t _last_time_us;
 	
 	bool _have_sens;
-	
 	AP_Compass_Backend *_backend;
 };

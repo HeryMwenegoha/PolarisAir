@@ -14,39 +14,33 @@ struct pid_info
 
 struct _gains
 {	
-	float *ki;
-	float *kp;
-	float *kd;
-	float *tau;
-	float *rmax;
-	float *imax;
-	// float *max_aux;	
-	// float *min_aux;	
+	float 	*ki;
+	float 	*kp;
+	float 	*kd;
+	float 	*tau;
+	uint8_t *rmax;
+	uint8_t *imax;
 };
 
 struct _Pgains
 {	
-	float *ki;
-	float *kp;
-	float *kd;
-	float *tau;
-	float *rmax;
-	float *imax;
-	float *roll_ff;
-	float *max_aux;	
-	float *min_aux;	
+	float 	*ki;
+	float 	*kp;
+	float 	*kd;
+	float 	*tau;
+	uint8_t *rmax;
+	uint8_t *imax;
+	float 	*roll_ff;	
 };
 
 struct _Ygains
 {	
-	float *ki;
-	float *kp;
-	float *kd;
-	float *tau;
-	float *rmax;
-	float *imax;
-	float *roll_ff;
-	float *max_aux;	
-	float *min_aux;	
+	float 	*ki;
+	float 	*kp;
+	float 	*kd;
+	float 	*tau;
+	uint8_t *rmax;
+	uint8_t *imax;
+	float	*roll_ff;	
 };
 #endif

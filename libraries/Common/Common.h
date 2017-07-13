@@ -17,7 +17,14 @@ enum Sens
 {
 	L3Gd20 = 0,
 	MPU6000,
-	ITG3200
+	L3Gd20H,
+};
+
+
+enum Compass{
+	LSM303D = 0,
+	HMC5883,
+	AK8963
 };
 
 /* Follows the mavlink MAV_CMD enum and therefore command can be used directly
@@ -117,12 +124,26 @@ typedef float      AP_float;
 typedef double     AP_double;
 
 struct Location{
+	public:
+	/*
+	Location()
+	{
+	  lat = 0;
+	  lon = 0;
+	  alt = 100;
+	  rad = 20;
+	  seq = 1;   // offset home
+	  cmd = 16;  // waypoint command
+	}
+	*/
+	
 	float    lat;
 	float    lon;
 	uint16_t alt;
 	uint8_t  rad;
 	uint8_t  seq;
 	uint8_t  cmd;
+	
 	/*
 	Location(float lati, float longi)
 	{
@@ -133,15 +154,15 @@ struct Location{
 		this->seq = 0;
 		this->cmd = 0;
 	}
-  
+    
 	Location()
 	{
-	  this->lat = 0;
-	  this->lon = 0;
-	  this->alt = 100;
-	  this->rad = 20;
-	  this->seq = 0;
-	  this->cmd = 0;
+	  lat = 0;
+	  lon = 0;
+	  alt = 100;
+	  rad = 20;
+	  seq = 1;   // offset home
+	  cmd = 16;  // waypoint command
 	}
 	*/
 
@@ -159,8 +180,8 @@ struct Location{
 	  this->lon = 0;
 	  this->alt = 100;
 	  this->rad = 20;
-	  this->seq = 0;
-	  this->cmd = 0;
+	  this->seq = 1;
+	  this->cmd = 16;
 	}
 
 	void print(){

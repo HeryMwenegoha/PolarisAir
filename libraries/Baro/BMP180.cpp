@@ -11,13 +11,8 @@ SFE_BMP180::SFE_BMP180()
 bool SFE_BMP180::begin()
 {
 	STATE_MACHINE = 1;
-	_state        = 0;
-	
-	double c3,c4,b1;
-	
-	Wire.begin();
-	
-	Wire.setClock(400000L);
+	_state        = 0;	
+	double c3,c4,b1;	
 
 	/* 	
 	The BMP180 includes factory calibration data stored on the device.
@@ -65,8 +60,6 @@ bool SFE_BMP180::begin()
 		Serial.print("MD: "); Serial.println(MD);
 		*/
 		
-		// Compute floating-point polynominals:
-
 		c3 =  160.0		 	 * pow(2,-15) * AC3;
 		c4 =  pow(10,-3)	 * pow(2,-15) * AC4;
 		b1 =  pow(160,2)	 * pow(2,-30) * VB1;
@@ -105,16 +98,29 @@ bool SFE_BMP180::begin()
 		*/
 
 		// Establish BaselinePressure
+		byte index_counter = 0;
+		double  temp	   = 20; // initialised to room temperature
 		for(int i = 0; i< 100; i++)
-		{
+		{	
 			startTemperature();
-			delay(5);
-			getTemperature(_temperature);
+			delay(10);
+			getTemperature(temp);
+			index_counter++;
+			
+			if(index_counter >= 50){
+				_temperature = 0.95 * temp + 0.05 * _temperature;
+			}else{
+				_temperature = temp;
+			}
 		}
 		
 
-	    startPressure(OVERSAMPLING);
-	    delay(26);
+	    char _delay = startPressure(OVERSAMPLING);
+	    if(_delay == 0){
+			Serial.println("BMP180	ERROR");
+			return false;
+		}
+		delay(26);
 	    getPressure(_raw_pressure,_temperature);
 
 		baseline  	   = _raw_pressure;
@@ -246,48 +252,39 @@ char SFE_BMP180::startTemperature(void)
 
 
 
-// Retrieve a previously-started temperature reading.
-// Requires begin() to be called once prior to retrieve calibration parameters.
-// Requires startTemperature() to have been called prior and sufficient time elapsed.
-// T: external variable to hold result.
-// Returns 1 if successful, 0 if I2C error.
+
+/*	
+Retrieve a previously-started temperature reading.
+Requires begin() to be called once prior to retrieve calibration parameters.
+Requires startTemperature() to have been called prior and sufficient time elapsed.
+T: external variable to hold result.
+Returns 1 if successful, 0 if I2C error.
+example from Bosch datasheet
+tu = 27898;
+example from http://wmrx00.sourceforge.net/Arduino/BMP085-Calcs.pdf
+tu = 0x69EC;
+*/
 char SFE_BMP180::getTemperature(double &T)
 {
 	unsigned char data[2];
 	char result;
-	double tu, a;
-	
+	double tu, a;	
 	data[0] = BMP180_REG_RESULT;
-
-	result = readBytes(data, 2);
+	result  = readBytes(data, 2);
 	if (result) // good read, calculate temperature
 	{
 		tu = (data[0] * 256.0) + data[1];
-
-		//example from Bosch datasheet
-		//tu = 27898;
-
-		//example from http://wmrx00.sourceforge.net/Arduino/BMP085-Calcs.pdf
-		//tu = 0x69EC;
-		
 		a = c5 * (tu - c6);
 		T = a + (mc / (a + md));
-
-		/*		
-		Serial.println();
-		Serial.print("tu: "); Serial.println(tu);
-		Serial.print("a: "); Serial.println(a);
-		Serial.print("T: "); Serial.println(*T);
-		*/
 	}
 	return(result);
 }
 
 
-char SFE_BMP180::startPressure(char oversampling)
 // Begin a pressure reading.
 // Oversampling: 0 to 3, higher numbers are slower, higher-res outputs.
 // Will return delay in ms to wait, or 0 if I2C error.
+char SFE_BMP180::startPressure(char oversampling)
 {
 	unsigned char data[2], result, delay;
 	
@@ -329,16 +326,28 @@ char SFE_BMP180::startPressure(char oversampling)
 }
 
 
-// Retrieve a previously started pressure reading, calculate abolute pressure in mbars.
-// Requires begin() to be called once prior to retrieve calibration parameters.
-// Requires startPressure() to have been called prior and sufficient time elapsed.
-// Requires recent temperature reading to accurately calculate pressure.
-
-// P: external variable to hold pressure.
-// T: previously-calculated temperature.
-// Returns 1 for success, 0 for I2C error.
-
-// Note that calculated pressure value is absolute mbars, to compensate for altitude call sealevel().
+/*
+Retrieve a previously started pressure reading, calculate abolute pressure in mbars.
+Requires begin() to be called once prior to retrieve calibration parameters.
+Requires startPressure() to have been called prior and sufficient time elapsed.
+Requires recent temperature reading to accurately calculate pressure.
+P: external variable to hold pressure.
+T: previously-calculated temperature.
+Returns 1 for success, 0 for I2C error.
+Note that calculated pressure value is absolute mbars, to compensate for altitude call sealevel().
+example from Bosch datasheet
+pu = 23843;
+example from http://wmrx00.sourceforge.net/Arduino/BMP085-Calcs.pdf, pu = 0x982FC0;	
+pu = (0x98 * 256.0) + 0x2F + (0xC0/256.0);		
+Serial.println();
+Serial.print("pu: "); Serial.println(pu);
+Serial.print("T: "); Serial.println(*T);
+Serial.print("s: "); Serial.println(s);
+Serial.print("x: "); Serial.println(x);
+Serial.print("y: "); Serial.println(y);
+Serial.print("z: "); Serial.println(z);
+Serial.print("P: "); Serial.println(*P);
+*/
 char SFE_BMP180::getPressure(double &P, double &T)
 {
 	unsigned char data[3];
@@ -351,44 +360,26 @@ char SFE_BMP180::getPressure(double &P, double &T)
 	if (result) // good read, calculate pressure
 	{
 		pu = (data[0] * 256.0) + data[1] + (data[2]/256.0);
-
-		//example from Bosch datasheet
-		//pu = 23843;
-
-		//example from http://wmrx00.sourceforge.net/Arduino/BMP085-Calcs.pdf, pu = 0x982FC0;	
-		//pu = (0x98 * 256.0) + 0x2F + (0xC0/256.0);
-		
 		s = T - 25.0;
 		x = (x2 * pow(s,2)) + (x1 * s) + x0;
 		y = (y2 * pow(s,2)) + (y1 * s) + y0;
 		z = (pu - x) / y;
 		P = (p2 * pow(z,2)) + (p1 * z) + p0;
-
-		/*
-		Serial.println();
-		Serial.print("pu: "); Serial.println(pu);
-		Serial.print("T: "); Serial.println(*T);
-		Serial.print("s: "); Serial.println(s);
-		Serial.print("x: "); Serial.println(x);
-		Serial.print("y: "); Serial.println(y);
-		Serial.print("z: "); Serial.println(z);
-		Serial.print("P: "); Serial.println(*P);
-		*/
 	}
 	return(result);
 }
 
 
-
-
+/*
+If any library command fails, you can retrieve an extended
+error code using this command. Errors are from the wire library: 
+0 = Success
+1 = Data too long to fit in transmit buffer
+2 = Received NACK on transmit of address
+3 = Received NACK on transmit of data
+4 = Other error
+*/
 char SFE_BMP180::getError(void)
-	// If any library command fails, you can retrieve an extended
-	// error code using this command. Errors are from the wire library: 
-	// 0 = Success
-	// 1 = Data too long to fit in transmit buffer
-	// 2 = Received NACK on transmit of address
-	// 3 = Received NACK on transmit of data
-	// 4 = Other error
 {
 	return(_error);
 }
@@ -434,61 +425,40 @@ bool SFE_BMP180::read()
 	  return false;
   }
   
-  
-  /*
-  switch(_state)
-  {
-	  case 0:
-	  _state++;
+  if(_state == 0){
 	  getTemperature(_temperature);
-	  startPressure(OVERSAMPLING);
-	  return false;	  
-	  
-	  
-	  case 1:
-	  _state = 0;
-	  if(getPressure(_raw_pressure,_temperature))
-	  {
-		_avg_pressure    = _raw_pressure;
-		//Serial.println(millis() - last_update_msec);
-		last_update_msec = millis();		
-	  }
-	  startTemperature();	
-	  return true;
+//_temperature = 29;
   }
-  */
-
-  if(_state == 0)
+  else if(getPressure(_raw_pressure,_temperature))
   {
-	  getTemperature(_temperature);
-  }
-  else
-  {
-	  if(getPressure(_raw_pressure,_temperature))
-	  {
-		  
-		//Serial.println(_temperature);
-		
+	_count++;
+	_pressure_sum += _raw_pressure;
+	
+	if(_count == FILTER_SIZE)
+	{
+		_avg_pressure = _pressure_sum/_count;
+		_pressure_sum = 0;
+		_count        = 0;
+		#if DEBUG
+		Serial.print((millis()-last_update_msec)*1e-3f, 3);
+		Serial.print("\t");
+		Serial.print(_temperature);
+		Serial.print("\t");
+		Serial.println(_avg_pressure);
 		last_update_msec = millis();
-		_count++;
-		_pressure_sum += _raw_pressure;
-		if(_count == FILTER_SIZE)
-		{
-			_avg_pressure = _pressure_sum/_count;
-			_pressure_sum = 0;
-			_count        = 0;
-		}	
-	  }
+		# endif		
+	}
+	
+	
+	last_update_msec = millis();	
   }
 
   _state++;
   
-  if(_state == 25)
-  {
+  if(_state == 25){
 	  _state = 0;
 	  startTemperature(); 
-  }else
-  {
+  }else{
 	  startPressure(OVERSAMPLING);
   }
 
@@ -534,7 +504,6 @@ bool SFE_BMP180::temperature(float &temp)
 }
   
  
- 
 bool SFE_BMP180::pressure(float  &press)
 {
 	if((millis() - last_update_msec > 250))
@@ -544,99 +513,7 @@ bool SFE_BMP180::pressure(float  &press)
 }
 
 
-
 float SFE_BMP180::baseline_pressure()
 {
 	return baseline;
 }
-
-
-/*
-bool SFE_BMP180::perform_measurement_NoTimer(void)
-{
-    if(STATE_MACHINE == 1)
-    {
-      STATE_MACHINE = 2;
-      getTemperature(_temperature); // get temp
-      startPressure(3);  // command a pressure reading
-	  return false;
-    } 
-    else
-    {
-      STATE_MACHINE = 1;
-      getPressure(_pressure,_temperature);
-      startTemperature();    
-	  return true;
-    } 
-}
-
-
-bool SFE_BMP180::perform_measurement()
-{
-  uint32_t t_now = millis();
-  if(t_now - _last_update_Msec >= 40)
-  {
-    _last_update_Msec = t_now;	
-	switch(STATE_MACHINE)
-	{
-		case 1:
-		{
-			STATE_MACHINE++;
-			getTemperature(_temperature); // get temp
-			startPressure(3);             // command a pressure reading
-		}
-	    return false;
-		
-		case 2:
-		{
-			STATE_MACHINE--;
-			getPressure(_raw_pressure,_temperature);
-			startTemperature();    
-			last_update_msec = millis();
-		}
-		return true;
-	}
-  }else{
-
-	return false;
-  }
-}
-
-
-
-// Given a pressure P (mb) taken at a specific altitude (meters),
-// return the equivalent pressure (mb) at sea level.
-// This produces pressure readings that can be used for weather measurements.
-double SFE_BMP180::sealevel(double P, double A)
-{
-	return(P/pow(1-(A/44330.0),5.255));
-}
-
-
-// Given a pressure measurement P (mb) and the pressure at a baseline P0 (mb),
-// return altitude (meters) above baseline.
-void SFE_BMP180::get_altitude(float &alt)
-{
-  alt = (44330.0*(1-pow(_avg_pressure/baseline,1/5.255)));
-  if(isnan(alt))
-  {
-    alt = 0;
-  }
-}
-
-
-// Given a pressure measurement P (mb) and the pressure at a baseline P0 (mb),
-// return altitude (meters) above baseline.
-float SFE_BMP180::get_altitude(void)
-{
-  float alt = 0;
-  alt = (44330.0*(1-pow(_avg_pressure/baseline,1/5.255)));
-  if(isnan(alt))
-  {
-    alt = 0;
-  }
-  return alt;
-}
-
-*/
-

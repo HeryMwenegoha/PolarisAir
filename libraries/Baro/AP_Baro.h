@@ -1,4 +1,10 @@
 #pragma once
+/*
+ Author 	:	Hery A Mwenegoha (C)2016
+ Purpose	:	Gets the Baro (BM180) Temperature and Pressure and calculates the altitude
+ Issues		:	BMP180 Temperature measures 30+degrees even when the ambient isnt, therefore i should consider replacing
+				my altitude estimations with an external temperature estimate.
+ */
 #include "BMP180.h"
 class AP_Baro
 {
@@ -13,7 +19,8 @@ class AP_Baro
 		
 	{
 		_hil_msec = 0;
-		_last_read_usec = 0;		
+		_last_read_usec = 0;
+		_read_usec = 0; 		
 	}
 	void initialise();
 	void read();  	 	// 50Hz
@@ -39,4 +46,6 @@ class AP_Baro
 	uint32_t _hil_msec;
 	SFE_BMP180	_bmp180;
 	uint64_t _last_read_usec;
+	
+	uint64_t _read_usec;
 };

@@ -5,9 +5,7 @@
 
 #define ADDRESS	0x1E
 
-#define CRA_REG_M	0x00
-//#define CRA_REG_ODR_220HZ	B00011100
-//#define CRA_REG_ODR_75HZ	B00011000
+#define CRA_REG_M			0x00
 #define CRA_REG_ODR_15HZ	B00010000
 
 #define CRB_REG_M	0x01
@@ -17,25 +15,21 @@
 #define MR_REG_M	0x02
 #define MR_REG_CONTINOUS	B00000000
 
-#define OUT_X_H_M	0x03
+#define OUT_X_H_M	 0x03
+#define OUT_TEMP_H_M 0x31
+#define OUT_TEMP_L_M 0x32
 
 #define SR_REG_M	0x09
 
 
 void  AP_LSM303D::initialise()
 {
-	Wire.begin();
-	delay(50);
-	Wire.setClock(I2CSPEED);
-	delay(50);
-	
 	// data rate set to 15Hz
 	Wire.write8(ADDRESS, CRA_REG_M, (byte)(CRA_REG_ODR_15HZ));
 	delay(10);
 	Wire.write8(ADDRESS, CRA_REG_M, (byte)(CRA_REG_ODR_15HZ));
 	delay(10);
 	if(Wire.read8(ADDRESS, CRA_REG_M) != (byte)(CRA_REG_ODR_15HZ)){
-		Serial.println(F("AP_LSM303D:	Compass	Not	Detected"));
 		_have_sens = false;
 		return;
 	}
@@ -56,10 +50,14 @@ void  AP_LSM303D::initialise()
 	
 	_update_us    = micros();
 	_last_time_us = micros();
-	Serial.println(F("AP_LSM303D::	Comp	Ready"));
-	_have_sens = true;
+	_have_sens	  = true;	
+	
+	AP_compass_backend.register_device(LSM303D);
+	Serial.println(F("AP_LSM303D::	Compass	Ready"));
 }
 
+// configured to give values between +/- 1.3 Gauss range from -2048 - 2047 LSB
+// Gain is 1100 for XY and 980 for Z.
 void AP_LSM303D::accumulate()
 {
 	if(_have_sens == false) return;
@@ -67,11 +65,8 @@ void AP_LSM303D::accumulate()
 	uint64_t _time = micros();
 	if(_time - _update_us >= 66666)
 	{
-		_update_us = _time;
-		
-		const uint8_t _status = (Wire.read8(ADDRESS, SR_REG_M) & B00000001);
-		
-		
+		_update_us = _time;		
+		const uint8_t _status = (Wire.read8(ADDRESS, SR_REG_M) & B00000001);		
 		if(_status == 1)
 		{
 			//const uint8_t* buffer = Wire.readReg(ADDRESS, (uint8_t)(OUT_X_H_M | 0x80), 6);
@@ -104,9 +99,9 @@ void AP_LSM303D::accumulate()
 			_mag_vector.y  =  -(int16_t)(buffer[4] << 8 | buffer[5]); 
 			_mag_vector.z  =  -(int16_t)(buffer[2] << 8 | buffer[3]); 												
 
-			//_mag_vector.print();
+			//_mag_vector.print(0);
 			
-			AP_compass_backend.filter_raw_sample(_mag_vector, 0.07);		
+			AP_compass_backend.filter_raw_sample(_mag_vector, 0.07);
 
 			uint64_t time = micros();	
 			_dt_mag = static_cast<float>(time - _last_time_us) * 1e-6f;
@@ -122,3 +117,4 @@ void AP_LSM303D::update()
 	if(_have_sens == false) return;
 	_backend->update_magnetometer();
 }
+

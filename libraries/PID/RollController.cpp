@@ -5,9 +5,9 @@ void AP_RollController::initialise(AP_Storage *_AP,  AP_AHRS *_AP_AHRS)
 	gains.ki	= &(_AP->ParameterStorage.list.roll_ki);	
 	gains.kd	= &(_AP->ParameterStorage.list.roll_kd);	
 	gains.tau	= &(_AP->ParameterStorage.list.roll_tau);
-	gains.rmax	= (float *)&(_AP->ParameterStorage.list.roll_rmax);	
-	gains.imax	= (float *)&(_AP->ParameterStorage.list.roll_imax);			
-	_ahrs		= _AP_AHRS;
+	gains.rmax	= &(_AP->ParameterStorage.list.roll_rmax);	
+	gains.imax	= &(_AP->ParameterStorage.list.roll_imax);			
+	_ahrs		= _AP_AHRS;	
 }
 
 float AP_RollController::_rate_out(float desired_rate, float meas_rate, float spd_scaler)

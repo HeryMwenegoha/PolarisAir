@@ -11,9 +11,6 @@ AP_MS4525DO AP_ms4525do;	// singleton class
 
 bool AP_MS4525DO::init()
 {	
-	Wire.begin();
-	delay(10);
-	
 	startmeasurement();
 	delay(40);
 	bool ret = collectdata();

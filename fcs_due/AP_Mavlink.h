@@ -3,14 +3,14 @@ class AP_Mavlink
 {
   private:
     HardwareSerial* Port;
-    AP_Storage  &_AP_params;
-    AP_AHRS     &_AP_ahrs;
-    AP_GPS      &_AP_gps;
-    AP_INS      &_AP_ins;
-    AP_Compass  &_AP_compass;
-    AP_Airspeed &_AP_airspeed;
-    AP_Baro     &_AP_baro;
-    AP_WayPoint &_AP_waypoint;
+    AP_Storage    &_AP_params;
+    AP_AHRS       &_AP_ahrs;
+    AP_GPS        &_AP_gps;
+    AP_INS        &_AP_ins;
+    AP_Compass    &_AP_compass;
+    AP_Airspeed   &_AP_airspeed;
+    AP_Baro       &_AP_baro;
+    AP_WayPoint   &_AP_waypoint;
 
     AP_Program      &_AP_program;
     AP_BatteryVolts &_AP_batteryvolts;
@@ -143,10 +143,18 @@ class AP_Mavlink
             */
             case MAVLINK_MSG_ID_MISSION_COUNT: {
                 if (mavlink_msg_mission_count_get_target_system(&msg) == UAV) {
-                  _AP_waypoint.count.total = static_cast<AP_u8>(mavlink_msg_mission_count_get_count(&msg));   // need to save it
-                  _AP_waypoint.count.save();
-                  send_mission_request(0);
-                  //_AP_program.guided(false); // since i am sending a command to start mission, i will say dont do guided from there ~ will continue with guided until a command to start a mission has been received
+                  uint8_t count = static_cast<AP_u8>(mavlink_msg_mission_count_get_count(&msg));
+                  
+                  if(_AP_program.ahrs().isflying() && (count > MAX_WAYPOINTS)){
+                    // Send a message saying too many waypoints to store in flight
+                    // otherwise continue with the process
+                    Serial.println(F("TOO MANY  WAYPOINTS FOR ONFLIGHT  STORAGE"));
+                  }else{
+                    _AP_waypoint.count.total = count; 
+                    _AP_waypoint.count.save();
+                    send_mission_request(0);
+                    //_AP_program.guided(false); // since i am sending a command to start mission, i will say dont do guided from there ~ will continue with guided until a command to start a mission has been received
+                  }
                 }
               }
               break;
@@ -155,20 +163,22 @@ class AP_Mavlink
                  if (mavlink_msg_mission_item_get_target_system(&msg) == UAV)
                  {
                    uint16_t _seq = mavlink_msg_mission_item_get_seq(&msg);
+
+                   // Put first 10 waypoints in a usable structure array
                    _AP_waypoint.update(mavlink_msg_mission_item_get_x(&msg), mavlink_msg_mission_item_get_y(&msg), static_cast<AP_u16>(mavlink_msg_mission_item_get_z(&msg)), static_cast<AP_u8>(mavlink_msg_mission_item_get_param1(&msg)), static_cast<AP_u8>(_seq), static_cast<AP_u8>(mavlink_msg_mission_item_get_command(&msg)));
 
                    // This function writes to eeprom takes about 3.3ms to write
                    // Best thing is to check if aircraft is flying before writing if it is then dont write
                    if(!_AP_program.ahrs().isflying())
                    {
-                     _AP_waypoint.write(_seq);
+                     _AP_waypoint.write(mavlink_msg_mission_item_get_x(&msg), mavlink_msg_mission_item_get_y(&msg), static_cast<AP_u16>(mavlink_msg_mission_item_get_z(&msg)), static_cast<AP_u8>(mavlink_msg_mission_item_get_param1(&msg)), static_cast<AP_u8>(_seq), static_cast<AP_u8>(mavlink_msg_mission_item_get_command(&msg)));
                    }
                   
                    if (_seq < (_AP_waypoint.count.total - 1)) {
                      send_mission_request(_seq + 1);
                     } else if (_seq == (_AP_waypoint.count.total - 1)) {
                      send_mission_ack((uint8_t)MAV_MISSION_ACCEPTED);
-                    } else if (_seq >= MAX_WAYPOINTS) {
+                    } else if (_seq >= MAX_STORED_WAYPOINTS) {
                      send_mission_ack((uint8_t)MAV_MISSION_NO_SPACE);
                     } else {
                      send_mission_ack((uint8_t)MAV_MISSION_INVALID);
@@ -195,18 +205,17 @@ class AP_Mavlink
             /*@ Onboard Parameters 
              */
             case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
-                 SEND_MAV_DATA  = true;
-                 SendParamList(UAV);
+                 SEND_MAV_DATA  = true;    
+                 send_parameter_list(UAV);
               }
               break;
 
             case MAVLINK_MSG_ID_PARAM_SET: {
-                 if (mavlink_msg_param_set_get_target_system(&msg) == UAV)
-                 {
+                 if (mavlink_msg_param_set_get_target_system(&msg) == UAV){
                   char param_id[16];
                   float param_value = mavlink_msg_param_set_get_param_value(&msg);
                   mavlink_msg_param_set_get_param_id(&msg, param_id);
-                  UpdateStorage(UAV, param_id, param_value);
+                  send_updated_storage(UAV, param_id, param_value);      
                  }
               }
               break;
@@ -254,7 +263,7 @@ class AP_Mavlink
             case MAVLINK_MSG_ID_VFR_HUD: {
               
 #if HIL_SIM == 1
-                //_AP_airspeed.setHil(mavlink_msg_vfr_hud_get_airspeed(&msg));
+                _AP_airspeed.setHil(mavlink_msg_vfr_hud_get_airspeed(&msg));   // airspeed in m/s
                 _AP_gps.setHilHeading(mavlink_msg_vfr_hud_get_heading(&msg));  // 0 -360 in degress
 #endif
               }
@@ -271,7 +280,7 @@ class AP_Mavlink
     }
 
     void send_hb(boolean &Send_Allowed)
-{
+    {
       #if MAVLINK_OLD_IMPLEMENTATION
       mavlink_message_t  msg;
       #endif
@@ -294,87 +303,45 @@ class AP_Mavlink
       }
     }
 
-    void sendParameter(byte uav_id, const char param_id[16], float param_value, uint8_t param_type, uint16_t param_index)
-    {
-      uint8_t       buf[MAVLINK_MSG_ID_PARAM_VALUE_LEN + 8];
-      mavlink_msg_param_value_pack(
-       uav_id,  
-       MAV_COMP_ID_ALL, 
-       (&msg), 
-       param_id, 
-       param_value, 
-       param_type, 
-       sizeof(_parameter_list_t)/4, 
-       param_index
-       );  
-      
-      uint16_t len = mavlink_msg_to_send_buffer(buf,(&msg)); 
-     
-      Port->write(buf,len);
-    }
-
-    void UpdateStorage(const byte UAV_ID, const char param_id[16], float param_value)
+    void send_updated_storage(const byte UAV_ID, const char param_id[16], float param_value)
     {  
-      char param_buffer[16];
-      union _f_un
-      {
-        float val;
-        uint8_t buffer[4];
-      };
-      union _f_un param_un;
-      uint8_t parameter_index = 0;
-      
-      while(parameter_index < sizeof(_parameter_list_t)/4)
-      {
-        strcpy_P(param_buffer, (char*)pgm_read_word(&(param_table[parameter_index])));      
-        
-        // check the returned char array against the received parameter id
-        if(strcmp(param_id, param_buffer) == 0)
-        {
-          param_un.val  = param_value; 
-         
-          for(int y = 0; y < 4; y++ )
-          { 
-             EEPROM.write(3000  +  y  +  (parameter_index  *  4), param_un.buffer[y]);                 // write  value to storage
-             _AP_params.ParameterStorage.paramBuffer[y + (parameter_index*4)] = param_un.buffer[y];    // updates global parameter
-          }      
-          for(int y = 0; y < 4; y++ )
-          {
-             param_un.buffer[y] = EEPROM.read(3000  +  y  +  (parameter_index * 4));        // read from eeprom and send the read parameter and not the received one. THis makes sure that the value has been updated                                                                      // 4ms increment in time
-          }
-          sendParameter(UAV_ID, param_buffer, param_un.val, MAV_VAR_FLOAT, parameter_index);      
-          break;
-        }
-        parameter_index++;
-      }
+      _AP_params.UpdateStorage(param_id, param_value, true); // atmega2560 has eeprom so update stuff   
+      uint8_t buf[MAVLINK_MSG_ID_PARAM_VALUE_LEN + 8];
+      mavlink_msg_param_value_pack(
+      UAV_ID,  
+      MAV_COMP_ID_ALL, 
+      &msg, 
+      _AP_params.get_param(param_id).id, 
+      _AP_params.get_param(param_id).val, 
+      _AP_params.get_param(param_id).type, 
+      _AP_params.get_param(param_id).count, 
+      _AP_params.get_param(param_id).index
+      );  
+      uint16_t len = mavlink_msg_to_send_buffer(buf,&msg);   
+      Port->write(buf,len); 
     }
 
-    void SendParamList(byte UAV_ID)
+    void send_parameter_list(byte UAV_ID)
     {
-      union _f_un{
-        float   val;
-        uint8_t buffer[4];
-      };
-      union _f_un param_un;                                                            // only one copy is created instead of millions in the while loop..
-      char  parameter_id[16];
-      byte  parameter_index = 0;
-      
-      while(parameter_index < sizeof(_parameter_list_t)/4)                             // this is the number of parameters
+      uint16_t parameter_index = 0;
+      while(parameter_index < _AP_params.get_param(parameter_index).count)                             // this is the number of parameters
       {      
-        strcpy_P(parameter_id, (char*)pgm_read_word(&(param_table[parameter_index]))); // copy parameter id from flash into parameter_id variable
-        
-        for(int y = 0; y < 4; y++ )
-        {
-           param_un.buffer[y] = _AP_params.ParameterStorage.paramBuffer[y  +  (parameter_index  *  4)];    // read paramter from eeprom and send
-        }
-        
-        sendParameter(UAV_ID, parameter_id, param_un.val, MAV_VAR_FLOAT, parameter_index);  
-        
-        parameter_index++;    
-        
+        uint8_t buf[MAVLINK_MSG_ID_PARAM_VALUE_LEN + 8];
+        mavlink_msg_param_value_pack(
+        UAV_ID,  
+        MAV_COMP_ID_ALL, 
+        &msg, 
+        _AP_params.get_param(parameter_index).id, 
+        _AP_params.get_param(parameter_index).val, 
+        _AP_params.get_param(parameter_index).type, 
+        _AP_params.get_param(parameter_index).count, 
+        parameter_index
+        );  
+        uint16_t len = mavlink_msg_to_send_buffer(buf,&msg);   
+        Port->write(buf,len);    
         delay(100);  // 10Hz
-      }  
-      parameter_index = 0;   
+        parameter_index++; 
+      }     
     }    
 
     void send_euler(uint32_t &loop_lapse, boolean &Send_Allowed)
@@ -383,7 +350,6 @@ class AP_Mavlink
       mavlink_message_t  msg;
       #endif
       uint8_t  buf[MAVLINK_MSG_ID_ATTITUDE_LEN + HEADER_LEN];     // PAX 28 + 8 = 36bytes
-
       mavlink_msg_attitude_pack(
         UAV, MAV_COMP_ID_IMU, &msg,
         loop_lapse,
@@ -409,22 +375,50 @@ class AP_Mavlink
       #endif
       uint8_t  buf[MAVLINK_MSG_ID_RAW_IMU_LEN + HEADER_LEN];     // PAX 26 + 8 = 34 bytes
 
+      vector3f raw_gyro;
+      vector3f raw_accel;
+      uint8_t gyro_count  = 0;
+      uint8_t accel_count = 0;
+      
+      for(int instance = 0; instance < 3; instance++){
+        if(_AP_ins._gyro_health_count[instance] == true)
+        {
+          raw_gyro = raw_gyro + _AP_ins.raw_gyro()[instance];
+          gyro_count++;
+        }
+
+        if(_AP_ins._accel_health_count[instance] == true)
+        {
+          raw_accel = raw_accel + _AP_ins.raw_accel()[instance];
+          accel_count++;
+        }
+      }
+
+      if(gyro_count < 1)
+        gyro_count = 1;
+
+      if(accel_count < 1)
+        accel_count = 1;
+      
+      raw_gyro  = raw_gyro/gyro_count;
+      raw_accel = raw_accel/accel_count;
+      
       mavlink_msg_raw_imu_pack(
         UAV, MAV_COMP_ID_IMU, &msg,
         loop_lapse,
-        static_cast<int16_t>(_AP_ins.raw_accel()[0].x),
-        static_cast<int16_t>(_AP_ins.raw_accel()[0].y),
-        static_cast<int16_t>(_AP_ins.raw_accel()[0].z),
-        static_cast<int16_t>(_AP_ins.raw_gyro()[0].x),
-        static_cast<int16_t>(_AP_ins.raw_gyro()[0].y),
-        static_cast<int16_t>(_AP_ins.raw_gyro()[0].z),
+        static_cast<int16_t>(raw_accel.x),
+        static_cast<int16_t>(raw_accel.y),
+        static_cast<int16_t>(raw_accel.z),
+        static_cast<int16_t>(raw_gyro.x) ,
+        static_cast<int16_t>(raw_gyro.y) ,
+        static_cast<int16_t>(raw_gyro.z) ,
         static_cast<int16_t>(_AP_compass.raw_field().x),
         static_cast<int16_t>(_AP_compass.raw_field().y),
         static_cast<int16_t>(_AP_compass.raw_field().z));
 
-      uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 
-      if (Send_Allowed) {
+        if (Send_Allowed) {
         Port->write(buf, len);
       }
     }
@@ -510,14 +504,13 @@ class AP_Mavlink
 #else
         _AP_program.ahrs().airspeed_estimate(),
 #endif
-
         _AP_program.ahrs().groundspeed_vector().length(),
         _AP_gps.heading()   ,
         srv_chan->throttle(),
 
-#if TECS_FILTER
+#if !TECS_FILTER
         _AP_program.tecs().altitude(),
-        _AP_program.tecs().climbrate()); // Climb rate
+        _AP_program.tecs().climbrate()); 
 #else
         _AP_program.aq().altitude(),
         _AP_program.aq().climbrate()); // Climb rate
@@ -646,7 +639,7 @@ class AP_Mavlink
 
     void send_mission_item(const uint8_t seq)
     {
-      if (seq >= MAX_WAYPOINTS)
+      if (seq >= MAX_STORED_WAYPOINTS)
         return;
 
       #if MAVLINK_OLD_IMPLEMENTATION
@@ -660,18 +653,18 @@ class AP_Mavlink
         &msg,
         GCS,
         MSP,
-        _AP_waypoint.WayPoint[seq].seq,
+        _AP_waypoint.read(seq).seq,
         MAV_FRAME_GLOBAL,
-        _AP_waypoint.WayPoint[seq].cmd,
+        _AP_waypoint.read(seq).cmd,
         0,
         1,
-        _AP_waypoint.WayPoint[seq].rad,
+        _AP_waypoint.read(seq).rad,
         255,
         255,
         255,
-        _AP_waypoint.WayPoint[seq].lat,
-        _AP_waypoint.WayPoint[seq].lon,
-        _AP_waypoint.WayPoint[seq].alt);
+        _AP_waypoint.read(seq).lat,
+        _AP_waypoint.read(seq).lon,
+        _AP_waypoint.read(seq).alt);
 
       uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
       Port->write(buf, len);
