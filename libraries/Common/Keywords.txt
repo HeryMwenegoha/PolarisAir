@@ -1,4 +1,5 @@
 ##	MAIN PROGRAM	##
+Common	KEYWORD1
 AP_Define	KEYWORD1
 AP_Program	KEYWORD1
 AP_Mavlink	KEYWORD1

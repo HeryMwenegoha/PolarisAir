@@ -59,7 +59,7 @@ byte            medium_loop_counter;
 void setup()
 { 
   // Initialise Serial and TWI Bus
-  Serial.begin(115200);
+  Serial.begin(57600);
   Wire.begin();
   Wire.setClock(400000L);
   delay(5);
@@ -140,11 +140,10 @@ void fast_loop()
   // Send mavlink stream
   AP_mavlink.sendstream();
 
-  
+  /*
   vector3f accel_bf  = vector3f(AP_ahrs.acc.x, AP_ahrs.acc.y, AP_ahrs.acc.z); // body frame accelerations
   vector3f accel_ef  = AP_ahrs.dcm() * accel_bf;                // accelerations in the earth frame
   float hgt_ddot_mea = -(accel_ef.z + 9.8065); 
-
   float height = AP_ahrs.altitude_estimate();
   Serial.print(height);
   Serial.print("\t");
@@ -153,7 +152,7 @@ void fast_loop()
   Serial.print(AP_ahrs.baro().get_temperature());
   Serial.print("\t");
   Serial.println(AP_ahrs.baro().get_pressure());
-  
+  */
 }
 
 void medium_loop(){

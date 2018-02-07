@@ -3,21 +3,19 @@ class AP_Mavlink
 {
   private:
     HardwareSerial* Port;
-    AP_Storage    &_AP_params;
-    AP_AHRS       &_AP_ahrs;
-    AP_GPS        &_AP_gps;
-    AP_INS        &_AP_ins;
-    AP_Compass    &_AP_compass;
-    AP_Airspeed   &_AP_airspeed;
-    AP_Baro       &_AP_baro;
-    AP_WayPoint   &_AP_waypoint;
-
+    AP_Storage      &_AP_params;
+    AP_AHRS         &_AP_ahrs;
+    AP_GPS          &_AP_gps;
+    AP_INS          &_AP_ins;
+    AP_Compass      &_AP_compass;
+    AP_Airspeed     &_AP_airspeed;
+    AP_Baro         &_AP_baro;
+    AP_WayPoint     &_AP_waypoint;
     AP_Program      &_AP_program;
     AP_BatteryVolts &_AP_batteryvolts;
 
     mavlink_message_t msg;
-    //uint8_t           buf[128];// PAX 26 + 8 = 34 bytes -> 128 Bytes probably a time
-
+    
     void stream_10Hz();
     void stream_3Hz();
     void stream_1Hz();
@@ -57,11 +55,7 @@ class AP_Mavlink
     {
       while (Port->available())
       {
-        #if !MAVLINK_OLD_IMPLEMENTATION
-        //mavlink_message_t msg;
-        mavlink_status_t status;
-        #endif
-        
+        mavlink_status_t status;       
         uint8_t read_bytes = Port->read();
         if (mavlink_parse_char(MAVLINK_COMM_0, read_bytes, &msg, &status))
         {
@@ -205,8 +199,8 @@ class AP_Mavlink
             /*@ Onboard Parameters 
              */
             case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
-                 SEND_MAV_DATA  = true;    
                  send_parameter_list(UAV);
+                 SEND_MAV_DATA  = true;    
               }
               break;
 
@@ -221,7 +215,7 @@ class AP_Mavlink
               break;
 
             case MAVLINK_MSG_ID_HIL_STATE:
-              {
+            {
 #if HIL_SIM == 1
                 hil_ahrs _hil_ahrs;
                 _hil_ahrs.roll     = mavlink_msg_hil_state_get_roll(&msg);      // rad
@@ -260,8 +254,7 @@ class AP_Mavlink
               }
               break;
 
-            case MAVLINK_MSG_ID_VFR_HUD: {
-              
+            case MAVLINK_MSG_ID_VFR_HUD: {              
 #if HIL_SIM == 1
                 _AP_airspeed.setHil(mavlink_msg_vfr_hud_get_airspeed(&msg));   // airspeed in m/s
                 _AP_gps.setHilHeading(mavlink_msg_vfr_hud_get_heading(&msg));  // 0 -360 in degress
@@ -281,12 +274,10 @@ class AP_Mavlink
 
     void send_hb(boolean &Send_Allowed)
     {
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t  msg;
-      #endif
-      uint8_t  buf[MAVLINK_MSG_ID_HEARTBEAT_LEN + HEADER_LEN];     // Pax 9 + 8 = 17bytes
-    
-      mavlink_msg_heartbeat_pack(
+      if (Send_Allowed) 
+      {
+        uint8_t  buf[MAVLINK_MSG_ID_HEARTBEAT_LEN + HEADER_LEN];     // Pax 9 + 8 = 17bytes    
+        mavlink_msg_heartbeat_pack(
         UAV, 
         MAV_COMP_ID_ALL, 
         &msg,
@@ -295,10 +286,7 @@ class AP_Mavlink
         _AP_ahrs.get_flightmode(),    // base mode
         MAV_MODE_PREFLIGHT,          // custom mode
         MAV_STATE_STANDBY);
-
-      uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-      if (Send_Allowed) {
+        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
         Port->write(buf, len);
       }
     }
@@ -346,11 +334,10 @@ class AP_Mavlink
 
     void send_euler(uint32_t &loop_lapse, boolean &Send_Allowed)
     {
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t  msg;
-      #endif
-      uint8_t  buf[MAVLINK_MSG_ID_ATTITUDE_LEN + HEADER_LEN];     // PAX 28 + 8 = 36bytes
-      mavlink_msg_attitude_pack(
+      if (Send_Allowed) 
+      {
+        uint8_t  buf[MAVLINK_MSG_ID_ATTITUDE_LEN + HEADER_LEN];     // PAX 28 + 8 = 36bytes
+        mavlink_msg_attitude_pack(
         UAV, MAV_COMP_ID_IMU, &msg,
         loop_lapse,
         _AP_ahrs.roll,
@@ -359,51 +346,41 @@ class AP_Mavlink
         _AP_ahrs.rollrate,
         _AP_ahrs.pitchrate,
         _AP_ahrs.yawrate);
-
-      uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-      if (Send_Allowed) {
+        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
         Port->write(buf, len);
       }
     }
 
 
     void send_imuraw(uint32_t &loop_lapse, boolean &Send_Allowed)
-    {
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t  msg;
-      #endif
-      uint8_t  buf[MAVLINK_MSG_ID_RAW_IMU_LEN + HEADER_LEN];     // PAX 26 + 8 = 34 bytes
-
-      vector3f raw_gyro;
-      vector3f raw_accel;
-      uint8_t gyro_count  = 0;
-      uint8_t accel_count = 0;
-      
-      for(int instance = 0; instance < 3; instance++){
-        if(_AP_ins._gyro_health_count[instance] == true)
-        {
-          raw_gyro = raw_gyro + _AP_ins.raw_gyro()[instance];
-          gyro_count++;
+    {      
+      if (Send_Allowed) 
+      {
+        uint8_t  buf[MAVLINK_MSG_ID_RAW_IMU_LEN + HEADER_LEN];     // PAX 26 + 8 = 34 bytes
+        vector3f raw_gyro;
+        vector3f raw_accel;
+        uint8_t gyro_count  = 0;
+        uint8_t accel_count = 0; 
+        for(int instance = 0; instance < 3; instance++)
+        {        
+          if(_AP_ins._gyro_health_count[instance] == true)
+          {
+           raw_gyro = raw_gyro + _AP_ins.raw_gyro()[instance];
+           gyro_count++;
+          } 
+          if(_AP_ins._accel_health_count[instance] == true)
+          {
+            raw_accel = raw_accel + _AP_ins.raw_accel()[instance];
+            accel_count++;
+          }
         }
-
-        if(_AP_ins._accel_health_count[instance] == true)
-        {
-          raw_accel = raw_accel + _AP_ins.raw_accel()[instance];
-          accel_count++;
-        }
-      }
-
-      if(gyro_count < 1)
-        gyro_count = 1;
-
-      if(accel_count < 1)
-        accel_count = 1;
-      
-      raw_gyro  = raw_gyro/gyro_count;
-      raw_accel = raw_accel/accel_count;
-      
-      mavlink_msg_raw_imu_pack(
+        if(gyro_count < 1)
+          gyro_count = 1;
+        if(accel_count < 1)
+          accel_count = 1; 
+        raw_gyro  = raw_gyro/gyro_count;
+        raw_accel = raw_accel/accel_count;
+        mavlink_msg_raw_imu_pack(
         UAV, MAV_COMP_ID_IMU, &msg,
         loop_lapse,
         static_cast<int16_t>(raw_accel.x),
@@ -414,28 +391,22 @@ class AP_Mavlink
         static_cast<int16_t>(raw_gyro.z) ,
         static_cast<int16_t>(_AP_compass.raw_field().x),
         static_cast<int16_t>(_AP_compass.raw_field().y),
-        static_cast<int16_t>(_AP_compass.raw_field().z));
-
+        static_cast<int16_t>(_AP_compass.raw_field().z));     
         uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-        if (Send_Allowed) {
         Port->write(buf, len);
       }
     }
 
     void send_gps(uint32_t &loop_lapse,  boolean &Send_Allowed)
     {
-
-      uint64_t hours   = static_cast<uint64_t>(_AP_gps.hours()   * 1e5);
-      uint64_t minutes = static_cast<uint64_t>(_AP_gps.minutes() * 1e3);
-      uint64_t seconds = static_cast<uint64_t>(_AP_gps.seconds() * 1e1);
-      uint64_t UTC_Time= hours + minutes + seconds;
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t  msg;
-      #endif
-      uint8_t  buf[MAVLINK_MSG_ID_GPS_RAW_INT_LEN + HEADER_LEN];     //  PAX 30 + 8 = 38 bytes
-     
-      mavlink_msg_gps_raw_int_pack(
+      if (Send_Allowed) 
+      {
+        uint64_t hours   = static_cast<uint64_t>(_AP_gps.hours()   * 1e5);
+        uint64_t minutes = static_cast<uint64_t>(_AP_gps.minutes() * 1e3);
+        uint64_t seconds = static_cast<uint64_t>(_AP_gps.seconds() * 1e1);
+        uint64_t UTC_Time= hours + minutes + seconds;
+        uint8_t  buf[MAVLINK_MSG_ID_GPS_RAW_INT_LEN + HEADER_LEN];     //  PAX 30 + 8 = 38 bytes     
+        mavlink_msg_gps_raw_int_pack(
         UAV, 
         MAV_COMP_ID_GPS, 
         &msg,
@@ -449,22 +420,20 @@ class AP_Mavlink
         static_cast<u16>(_AP_gps.groundspeed()  * 1e2),
         static_cast<u16>(_AP_gps.heading()      * 1e2), // COG
         _AP_gps.num_sats());
-
-      uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-      if (Send_Allowed) {
+        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
         Port->write(buf, len);
       }
     }
 
     void send_servo(uint32_t &loop_lapse, servo_out *servoOut, boolean &Send_Allowed)
     {
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t msg;
-      #endif
-      uint8_t  buf[MAVLINK_MSG_ID_SERVO_OUTPUT_RAW_LEN + HEADER_LEN];     //  PAX 21 + 8 = 29 bytes
-
-      mavlink_msg_servo_output_raw_pack(
+      if (Send_Allowed) 
+      {
+        #if MAVLINK_OLD_IMPLEMENTATION
+        mavlink_message_t msg;
+        #endif
+        uint8_t  buf[MAVLINK_MSG_ID_SERVO_OUTPUT_RAW_LEN + HEADER_LEN];     //  PAX 21 + 8 = 29 bytes
+        mavlink_msg_servo_output_raw_pack(
         UAV, MAV_COMP_ID_ALL, &msg,
         loop_lapse     ,
         1              ,
@@ -476,74 +445,60 @@ class AP_Mavlink
         servoOut->chan6,  // empty for overide
         servoOut->chan7,  // empty for override
         servoOut->chan8); // chan 8 - flight mode channel
-
-      uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-      //Serial.print("Aux "); Serial.print(servoOut->chan1); Serial.print(servoOut->chan2); Serial.print(servoOut->chan3); Serial.println(servoOut->chan4);
-
-      if (Send_Allowed) {
+        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
         Port->write(buf, len);
       }
     }
 
-    /*@ Send vfr information
-    */
+
     void send_vfr(uint32_t &loop_lapse, servo_out *srv_chan, boolean &Send_Allowed)
     {
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t msg;
-      #endif
-      uint8_t  buf[MAVLINK_MSG_ID_VFR_HUD_LEN + HEADER_LEN];     //  PAX 21 + 8 = 29 bytes
-
-      mavlink_msg_vfr_hud_pack(
+      if (Send_Allowed) 
+      {
+        uint8_t  buf[MAVLINK_MSG_ID_VFR_HUD_LEN + HEADER_LEN];     //  PAX 21 + 8 = 29 bytes  
+        mavlink_msg_vfr_hud_pack(
         UAV,
         MAV_COMP_ID_ALL,
-        &msg,
-        
-#if TECS_FILTER
+        &msg,          
+        #if TECS_FILTER
         _AP_program.tecs().speed(),
-#else
+        #else
         _AP_program.ahrs().airspeed_estimate(),
-#endif
+        #endif
         _AP_program.ahrs().groundspeed_vector().length(),
         _AP_gps.heading()   ,
         srv_chan->throttle(),
-
-#if !TECS_FILTER
+  
+        #if !TECS_FILTER
         _AP_program.tecs().altitude(),
         _AP_program.tecs().climbrate()); 
-#else
+        #else
         _AP_program.aq().altitude(),
         _AP_program.aq().climbrate()); // Climb rate
-#endif
-
-      uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-      if (Send_Allowed) {
+        #endif 
+        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
         Port->write(buf, len);
       }
     }
 
     void send_status(uint32_t &loop_lapse,  boolean &Send_Allowed)
     {
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t msg;
-      #endif
-      uint8_t  buf[MAVLINK_MSG_ID_SYS_STATUS_LEN + HEADER_LEN];     //  PAX 21 + 8 = 29 bytes
-
-      uint32_t onboard_control_sensors_present = B00111111; // Current controls
-      uint32_t onboard_control_sensors_enabled = B00111111; // All sensors enabled
-      uint32_t onboard_control_sensors_health  = B00111111; // All sensors healthy
-      uint16_t load               = 50;                     // Maximum usage in percentage of mainloop time
-      uint16_t voltage_battery    = _AP_batteryvolts.get_adc() * _AP_params.ParameterStorage.list.PowerModule_Gain * 1000;
-      int8_t   battery_remaining  = 0;
-      uint16_t drop_rate_comm     = 0;
-      uint16_t errors_comm        = 0;
-      uint16_t errors_count1      = _AP_ins.healthy(); // healthy 1
-      uint16_t errors_count2      = _AP_gps.healthy(); // healthy 1
-      uint16_t errors_count3      = _AP_baro.healthy();// healthy 1
-      uint16_t errors_count4      = 0;
-
-      mavlink_msg_sys_status_pack(
+      if(Send_Allowed)
+      {
+        uint8_t  buf[MAVLINK_MSG_ID_SYS_STATUS_LEN + HEADER_LEN];     //  PAX 21 + 8 = 29 bytes
+        uint32_t onboard_control_sensors_present = B00111111;         // Current controls
+        uint32_t onboard_control_sensors_enabled = B00111111;         // All sensors enabled
+        uint32_t onboard_control_sensors_health  = B00111111;         // All sensors healthy
+        uint16_t load               = 50;                             // Maximum usage in percentage of mainloop time
+        uint16_t voltage_battery    = _AP_batteryvolts.get_adc() * _AP_params.ParameterStorage.list.PowerModule_Gain * 1000;
+        int8_t   battery_remaining  = 0;
+        uint16_t drop_rate_comm     = 0;
+        uint16_t errors_comm        = 0;
+        uint16_t errors_count1      = _AP_ins.healthy(); // healthy 1
+        uint16_t errors_count2      = _AP_gps.healthy(); // healthy 1
+        uint16_t errors_count3      = _AP_baro.healthy();// healthy 1
+        uint16_t errors_count4      = 0;  
+        mavlink_msg_sys_status_pack(
         UAV,
         MAV_COMP_ID_ALL,
         &msg,
@@ -559,11 +514,8 @@ class AP_Mavlink
         errors_count1,
         errors_count2,
         errors_count3,
-        errors_count4);
-
-      uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-      if (Send_Allowed) {
+        errors_count4);        
+        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
         Port->write(buf, len);
       }
     }
@@ -571,68 +523,55 @@ class AP_Mavlink
 
     void send_mission_request(const uint8_t &seq)
     {
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t msg;
-      #endif
       uint8_t  buf[MAVLINK_MSG_ID_MISSION_REQUEST_LEN + HEADER_LEN];     //  PAX 4 + 8 = 12 bytes
-
       mavlink_msg_mission_request_pack(
-        UAV,
-        MAV_COMP_ID_ALL,
-        &msg,
-        GCS,
-        MSP,
-        seq);
+      UAV,
+      MAV_COMP_ID_ALL,
+      &msg,
+      GCS,
+      MSP,
+      seq);
       uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
       Port->write(buf, len);
     }
 
     void send_mission_ack(const uint8_t mav_ack)
     {
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t msg;
-      #endif
       uint8_t  buf[MAVLINK_MSG_ID_MISSION_ACK_LEN + HEADER_LEN];     //  PAX 3 + 8 = 11 bytes
-
       mavlink_msg_mission_ack_pack(
-        UAV,
-        MAV_COMP_ID_ALL,
-        &msg,
-        GCS,
-        MSP,
-        mav_ack);
-
+      UAV,
+      MAV_COMP_ID_ALL,
+      &msg,
+      GCS,
+      MSP,
+      mav_ack);
       uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
       Port->write(buf, len);
     }
 
-    void send_command_ack(const uint16_t command_id, const uint8_t result){
+    void send_command_ack(const uint16_t command_id, const uint8_t result)
+    {
       uint8_t  buf[MAVLINK_MSG_ID_COMMAND_ACK_LEN + HEADER_LEN];     //  PAX 3 + 8 = 11 bytes
       mavlink_msg_command_ack_pack(
       UAV, 
       MAV_COMP_ID_ALL, 
       &msg,
       command_id, 
-      result);
-      
+      result);    
       uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
       Port->write(buf, len);   
     }
 
     void send_mission_count(const uint8_t count)
     {
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t msg;
-      #endif
-      uint8_t  buf[MAVLINK_MSG_ID_MISSION_COUNT_LEN + HEADER_LEN];     //  PAX 4 + 8 = 11 bytes
-     
+      uint8_t  buf[MAVLINK_MSG_ID_MISSION_COUNT_LEN + HEADER_LEN];     //  PAX 4 + 8 = 11 bytes     
       mavlink_msg_mission_count_pack(
-        UAV,
-        MAV_COMP_ID_ALL,
-        &msg,
-        GCS,
-        MSP,
-        count);
+      UAV,
+      MAV_COMP_ID_ALL,
+      &msg,
+      GCS,
+      MSP,
+      count);
       uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
       Port->write(buf, len);
     }
@@ -641,31 +580,25 @@ class AP_Mavlink
     {
       if (seq >= MAX_STORED_WAYPOINTS)
         return;
-
-      #if MAVLINK_OLD_IMPLEMENTATION
-      mavlink_message_t msg;
-      #endif
       uint8_t  buf[MAVLINK_MSG_ID_MISSION_ITEM_LEN + HEADER_LEN];     //  PAX 37 + 8 = 43 bytes
-
       mavlink_msg_mission_item_pack(
-        UAV,
-        MAV_COMP_ID_ALL,
-        &msg,
-        GCS,
-        MSP,
-        _AP_waypoint.read(seq).seq,
-        MAV_FRAME_GLOBAL,
-        _AP_waypoint.read(seq).cmd,
-        0,
-        1,
-        _AP_waypoint.read(seq).rad,
-        255,
-        255,
-        255,
-        _AP_waypoint.read(seq).lat,
-        _AP_waypoint.read(seq).lon,
-        _AP_waypoint.read(seq).alt);
-
+      UAV,
+      MAV_COMP_ID_ALL,
+      &msg,
+      GCS,
+      MSP,
+      _AP_waypoint.read(seq).seq,
+      MAV_FRAME_GLOBAL,
+      _AP_waypoint.read(seq).cmd,
+      0,
+      1,
+      _AP_waypoint.read(seq).rad,
+      255,
+      255,
+      255,
+      _AP_waypoint.read(seq).lat,
+      _AP_waypoint.read(seq).lon,
+      _AP_waypoint.read(seq).alt);
       uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
       Port->write(buf, len);
     }
@@ -673,23 +606,21 @@ class AP_Mavlink
 
      void send_global_gps_setpoint()
      {
-        #if MAVLINK_OLD_IMPLEMENTATION
-        mavlink_message_t msg;
-        #endif
-        uint8_t buf[MAVLINK_MSG_ID_GLOBAL_POSITION_SETPOINT_INT_LEN + HEADER_LEN];
-   
-        mavlink_msg_global_position_setpoint_int_pack(
-        UAV,
-        MAV_COMP_ID_ALL,
-        &msg,
-        0,
-        static_cast<int32_t>(_AP_program.Set_WP().lat * 1e7) ,
-        static_cast<int32_t>(_AP_program.Set_WP().lon * 1e7) ,
-        static_cast<int32_t>(_AP_program.Set_WP().alt * 1e3) ,
-        static_cast<int16_t>(_AP_program.Set_WP().rad * 1e2)); // actually meant to be yaw
-        uint16_t len = mavlink_msg_to_send_buffer(buf,&msg);
-        if(SEND_MAV_DATA)
-        Serial.write(buf,len);
+        if(SEND_MAV_DATA == true)
+        {
+          uint8_t buf[MAVLINK_MSG_ID_GLOBAL_POSITION_SETPOINT_INT_LEN + HEADER_LEN];   
+          mavlink_msg_global_position_setpoint_int_pack(
+          UAV,
+          MAV_COMP_ID_ALL,
+          &msg,
+          0,
+          static_cast<int32_t>(_AP_program.Set_WP().lat * 1e7) ,
+          static_cast<int32_t>(_AP_program.Set_WP().lon * 1e7) ,
+          static_cast<int32_t>(_AP_program.Set_WP().alt * 1e3) ,
+          static_cast<int16_t>(_AP_program.Set_WP().rad * 1e2)); // actually meant to be yaw
+          uint16_t len = mavlink_msg_to_send_buffer(buf,&msg);
+          Serial.write(buf,len);
+        }
      }
 };
 

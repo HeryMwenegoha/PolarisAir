@@ -371,12 +371,28 @@ bool GPSUBX::initialise(HardwareSerial *_Port)
 	else
 	{
 		configure_measurementRate(); // 5Hz update rate setup
+		UBX.fix_time_ms = millis();
+		update_Msec  = UBX.fix_time_ms;
 		return true;
 	}
 	
+	//UBX.fix_time_ms = millis();
+	//update_Msec  = UBX.fix_time_ms;
+}
+
+
+
+bool GPSUBX::initialise(HardwareSerial *_Port, uint32_t baud)
+{
+	Port = _Port;
+	BaudRate = baud;
+	Port->begin(BaudRate);
 	UBX.fix_time_ms = millis();
 	update_Msec  = UBX.fix_time_ms;
+	return true;
 }
+
+
 
 void GPSUBX::calculate_checksum(byte *buffer, const byte len)
 {

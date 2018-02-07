@@ -20,6 +20,28 @@ void AP_GPS::initialise(HardwareSerial *Port)
 	
 }
 
+
+void AP_GPS::initialise(HardwareSerial *Port, uint32_t baud)
+{
+	if(_gpsubx.initialise(Port, baud))
+		_INSTANCES++;
+	
+	if(_INSTANCES != 0)
+		_have_gps = true;
+	else
+		_have_gps = false;
+		
+	if(_have_gps == false)
+		Serial.println("AP_GPS::No	GPS	Device	Detected");
+	else
+	{
+		Serial.print("AP_GPS::	GPS	on	Port	1,	Baud:	");
+		Serial.println(AP_GPS::BaudRate());
+	}
+	
+}
+
+
 void AP_GPS::read(void)
 {
 	if(_gpsubx.process_stream() == true) // if we have new updates

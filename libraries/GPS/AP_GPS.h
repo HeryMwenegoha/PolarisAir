@@ -11,6 +11,7 @@ class AP_GPS
 		_INSTANCES(0)
 	{};
 	void initialise(HardwareSerial *Port);	
+	void initialise(HardwareSerial *Port, uint32_t baud);
 	void read(void);
 	void setHil(const float &lat, const float &lon, const float &alt, const vector3f velocity);
 	void setHilHeading(const int16_t &heading);

@@ -25,6 +25,7 @@ class GPSUBX
 	public:
 	GPSUBX();
 	bool initialise(HardwareSerial *Port);	
+	bool initialise(HardwareSerial *Port, uint32_t baud);
 	bool process_stream(void);
 	struct _UBX{
 		uint32_t fix_time_ms;

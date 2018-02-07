@@ -53,12 +53,12 @@ AP_AHRS::update_matrix()
   {
 	if(_ins->_gyro_health_count[i]){
 		_gyro_reg++;
-		gyro_vector = gyro_vector + _ins->gyro()[i];   	// radians per second
+		gyro_vector = gyro_vector + _ins->gyro()[i];   	// rad/s
 	}
 	
 	if(_ins->_accel_health_count[i]){
 		_accel_reg++;
-		accel_vector = accel_vector + _ins->accel()[i];  // metres  per second squared
+		accel_vector = accel_vector + _ins->accel()[i];  // m/s2
 	}
   }
   
