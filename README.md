@@ -6,4 +6,4 @@ Built for the Atmega-2560 chip.
 Works with the Polaris Ground Station
 
 ## Collaborations
-Contact me: Hery.
+Contact: Hery.
