@@ -1,7 +1,26 @@
-/*@ This library has been fully designed and developed by Hery A Mwenegoha (C) 2016
+/*
+    UBX.h - Ublox GNSS receiver interface library
+    Copyright (C) 2016  Hery A Mwenegoha. All rights reserved.
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>
+ */
+
+/*
  *@ Run process stream at fast loop frequency 
  *@ Update lat lon etc at recommended 1Hz.
  */
+
 #ifndef UBX_h
 #define UBX_h
 #include "AHRS.h"
