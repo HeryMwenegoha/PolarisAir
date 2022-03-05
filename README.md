@@ -15,7 +15,7 @@ Uses L1 for guidance and TECS for pitch and throttle control
 Tested on a 2kg and 4kg fixed wing UAV. Works well, even though needs some additional work
 
 ## Collaborations
-Contact: Hery
+Contact: Hery-
 
 1. Implement EKF (INS/GNSS/Mag/Baro/Airspeed) for sensor fusion and have the DCM working as secondary fusion scheme.
    EKF are fairly common, plan on extending this to UKFs for a model based approach to improve accuracy of both mean and covariance      
