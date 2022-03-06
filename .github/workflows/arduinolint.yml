@@ -6,4 +6,4 @@ jobs:
       - uses: actions/checkout@v2
       - uses: arduino/arduino-lint-action@v1
         with:
-          path: ../fcs_due/
+          path: /home/runner/work/PolarisAir/fcs_due
