@@ -1,10 +1,16 @@
 #include "AP_INS.h"
+
+#include "AP_INS_Backend2.h" // Since This class is forward declared in the h file i am including it here to prevent compiler errors
+
 AP_INS      AP_ins;
 
-void AP_INS::add_backend(AP_INS_Backend *_ptr)
+void AP_INS::add_backend(AP_INS_Backend2 *_ptr)
 {
-	if(!_ptr){
-		_backends[instance++] = _ptr;
+	if(_ptr != NULL){
+		_backends[instances++] = _ptr;
+		Serial.println(F("Backend added"));
+		//Serial.println(_ptr->LSB2DPS,5);
+		//Serial.println(_backends[0]->LSB2DPS,5);
 	}
 }
 
@@ -114,6 +120,7 @@ bool AP_INS::calibrate()
 			
 			if( (_accel_health_count[0] || _accel_health_count[1] ||_accel_health_count[2]) &&
 				(_gyro_health_count[0]  || _gyro_health_count[1]  || _gyro_health_count[2])){
+				Serial.println(F("AP_INS:: Sensors	Calibrated"));
 				_have_ins = true;
 			}else{
 				Serial.println(F("AP_INS::No	Healthy	Sensors	Detected"));
@@ -123,50 +130,61 @@ bool AP_INS::calibrate()
 	}
 }
 
-void 	 AP_INS::update()
+
+void  AP_INS::update()
 {	
 	if(_hil_mode == true)
 		return;	
-	
+
 	if(_calibrated == false){
 		_calibrated = calibrate();
 		return;
 	}
 	
-	_accel_offset[L3Gd20] = vector3f(
+	_accel_offset[0] = vector3f(
 	_parameters->ParameterStorage.list.Accel2_offsetX,
 	_parameters->ParameterStorage.list.Accel2_offsetY,
-	_parameters->ParameterStorage.list.Accel2_offsetZ); 
-	
-    _accel_offset[MPU6000] = vector3f(
-	_parameters->ParameterStorage.list.Accel2_offsetX,
-	_parameters->ParameterStorage.list.Accel2_offsetY,
-	_parameters->ParameterStorage.list.Accel2_offsetZ); 
+	_parameters->ParameterStorage.list.Accel2_offsetZ); // 0
 
 	_accel_scale = vector3f(
 	_parameters->ParameterStorage.list.Accel2_lsbX,
 	_parameters->ParameterStorage.list.Accel2_lsbY,
-	_parameters->ParameterStorage.list.Accel2_lsbZ);	
+	_parameters->ParameterStorage.list.Accel2_lsbZ);	// 8192
 	
+	
+	//_accel_offset[0].print();
+	//_accel_scale.print();
+	
+	// Select Gyroscope and Accelerometer Scaler
+	float g_scaler = 1;
+	float a_scaler = 1;
+	for(uint8_t i=0; i<instances; i++)
+	{
+		switch(_backends[i]->CHAR)
+		{
+			case 'G':
+				g_scaler = radiansf(_backends[i]->SCALER);    // LSB2DPS
+				break;
 
+			case 'A':
+				if(_backends[i]->TYPE == FXOS8700)
+					//a_scaler = 8192*_backends[i]->SCALER;     // LSB2G's
+				break;
+		}
+	}
 	
 	for(int i = 0; i < 3; i++)
 	{
 		_raw_accel[i]  = _accel_[i];  			// ADC LSB
 		_raw_gyro[i]   = _gyro_[i];   			// ADC LSB
 	}
-
-	_gyro[L3Gd20]  = (_raw_gyro[L3Gd20]   - _gyro_offset[L3Gd20])  * radiansf(0.0175);		// radians per second 500DPS
-	_gyro[MPU6000] = (_raw_gyro[MPU6000]  - _gyro_offset[MPU6000]) * radiansf(0.0152672f);	// radians per second 500DPS
-	_gyro[L3Gd20H] = (_raw_gyro[L3Gd20H]  - _gyro_offset[L3Gd20H]) * radiansf(0.0175);
-			
-	_accel[L3Gd20].x  = (_raw_accel[L3Gd20].x  - _accel_offset[L3Gd20].x)  * (9.81/_accel_scale.x);
-	_accel[L3Gd20].y  = (_raw_accel[L3Gd20].y  - _accel_offset[L3Gd20].y)  * (9.81/_accel_scale.y);
-	_accel[L3Gd20].z  = (_raw_accel[L3Gd20].z  - _accel_offset[L3Gd20].z)  * (9.81/_accel_scale.z);		
 	
-	_accel[MPU6000].x = (_raw_accel[MPU6000].x - _accel_offset[MPU6000].x) * (9.81/_accel_scale.x);
-	_accel[MPU6000].y = (_raw_accel[MPU6000].y - _accel_offset[MPU6000].y) * (9.81/_accel_scale.y);
-	_accel[MPU6000].z = (_raw_accel[MPU6000].z - _accel_offset[MPU6000].z) * (9.81/_accel_scale.z);
+	_gyro[0]     = (_raw_gyro[0]     - _gyro_offset[0])  * g_scaler;		
+			
+	_accel[0].x  = (_raw_accel[0].x  - _accel_offset[0].x)  * (1/_accel_scale.x) * a_scaler * 9.81;
+	_accel[0].y  = (_raw_accel[0].y  - _accel_offset[0].y)  * (1/_accel_scale.y) * a_scaler * 9.81;
+	_accel[0].z  = (_raw_accel[0].z  - _accel_offset[0].z)  * (1/_accel_scale.z) * a_scaler * 9.81;		
+	
 	
 		
 	// Grab values from Backend and apply all the neccessary scaling and whatnots
@@ -176,6 +194,8 @@ void 	 AP_INS::update()
 	}else{
 		_last_update_msec = millis();
 	}
+	
+	//_accel[0].print();
 	
 	/*
 	Serial.print(_accel.x);
@@ -228,10 +248,8 @@ void     AP_INS::setHil(const float &_rr, const float &_pr, const float &_yr, co
 	
 	
 	// Need to change this for raw values| Not very necessary though
-	_raw_gyro[L3Gd20]   = _gyro[L3Gd20]    *  (degreesf() * (1/0.0175));  		  // LSB
-	_raw_gyro[MPU6000]  = _gyro[MPU6000]   *  (degreesf() * 65.5f);   			  // LSB
-	_raw_accel[L3Gd20]  = _accel[L3Gd20]   * (8192.0f/9.81f); 	
-	_raw_accel[MPU6000] = _accel[MPU6000]  * (8192.0f/9.81f); 		  			  // LSB
+	_raw_gyro[0]   = _gyro[0]    *  (degreesf() * (1/0.015625f)); // LSB //_raw_gyro[MPU6000]  = _gyro[MPU6000]   *  (degreesf() * 65.5f);   // LSB
+	_raw_accel[0]  = _accel[0]   *  (8192.0f/9.81f); 	          //_raw_accel[MPU6000] = _accel[MPU6000]  * (8192.0f/9.81f); 		// LSB
 }
 
 bool  	 AP_INS::have_ins()

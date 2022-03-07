@@ -55,6 +55,12 @@ class AP_Program
      gps_takeoff_enabled  = false;
    }
 
+   // do isnan check, isinf check as well - rogue initialisation
+   void CMD_ModeChange(uint16_t _mode){
+    gcs_mode_change = _mode;
+   }
+   
+
    void guided(const bool &val){
      do_guided       = val;
      guided_complete = false;
@@ -107,6 +113,8 @@ class AP_Program
    Location     WPCurrent;
    Location     WPA; // only for automatic control
    bool         gps_takeoff_enabled;
+
+   uint16_t     gcs_mode_change; // Consider removing this 
   
    float throttle;  
    float yaw_dem; 
@@ -191,6 +199,8 @@ AP_Program::initialise(){
 
   update_stab_usec = micros();
   throttle         = 1000;
+
+  gcs_mode_change = 900; // IGNORE MODE INITIALISED
   
   servo_roll.attach(rollpin,1000,2000);
   servo_pitch.attach(pitchpin,1000,2000);
@@ -204,8 +214,30 @@ AP_Program::initialise(){
 void 
 AP_Program::update(servo_out &ServoChan)
 {
-  uint16_t mode    = _radio->chan8(); //channels[7]; // channel number 8  ID 7
+  static uint16_t gcsMode = gcs_mode_change;
+  static uint16_t mode    = 900;       
+  uint16_t currMode       = _radio->chan8(); // channels[7]; channel number 8  ID 7
+  // Priority loop checks for mode change from controller first
+  if(currMode != mode)                     
+  {
+    // mode change from controller has happened - update mode
+    mode = currMode;
+  } 
+  else
+  {
+    // no mode change from controller - check for mode change from gcs  
+    if(gcs_mode_change != gcsMode)
+    {
+      mode = gcs_mode_change;
+    }
+    gcsMode = gcs_mode_change;
+  }
+  
+  
   ServoChan.chan8  = _radio->chan8();
+  
+  mode = gcs_mode_change;
+  
   if(FLIGHT_MODE(mode) != IGNORE)
     flight_mode = FLIGHT_MODE(mode);
 

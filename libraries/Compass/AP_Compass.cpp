@@ -17,7 +17,7 @@ void AP_Compass::update()
 		return;
 	
 	float mag_scale_xy = 0;			
-	float mag_scale_z  = 0;			
+	float mag_scale_z  = 0;		
 	
 	switch(instance)
 	{
@@ -35,43 +35,52 @@ void AP_Compass::update()
 		mag_scale_xy  = 0.15f; 			
 		mag_scale_z   = 0.15f;	
 		break;
-	}	
-	
-
-	// Gives a +/- 1.3 Gauss Limit
-	_raw_mag.x = _raw_mag_adc.x * mag_scale_xy;
-	_raw_mag.y = _raw_mag_adc.y * mag_scale_xy;
-	_raw_mag.z = _raw_mag_adc.z * mag_scale_z;
 		
-	// Convert to miligauss easier to deal with
-	_raw_mag    = _raw_mag * 1000;
+		case FXOS8700:
+		mag_scale_xy  = 0.1; // LSB to uT 			
+		mag_scale_z   = 0.1; // LSB to uT (microTesla) earth 25 - 65uT ; UK - 48uT		
+		break;
+	}		
+	
+	/*
+	_raw_mag.x = _raw_mag_adc.x; // LSB // * mag_scale_xy; // Gives a +/- 1.3 Gauss Limit
+	_raw_mag.y = _raw_mag_adc.y; // LSB // * mag_scale_xy;
+	_raw_mag.z = _raw_mag_adc.z; // LSB // * mag_scale_z;
+		
+	// Convert to microTeslas easier to deal with
+	//_raw_mag    = _raw_mag * 1000;
+	*/
 	
 	//determine_max(_raw_mag, value.max);
 	//determine_min(_raw_mag, value.min);
-	vector3f  offsets = value.max + value.min;
-	offsets 		  = offsets * 0.5f;
+	vector3f  _adc_offsets = value.max + value.min;
+	_adc_offsets 		   = _adc_offsets * 0.5f;
 	
-	vector3f  scaling = value.max - value.min;
-	scaling			  = scaling * 0.5f;	
-	float avg_scale   = (scaling.x + scaling.y + scaling.z) / 3;
+	vector3f  _adc_circle_scaling = value.max - value.min; 			// ellipse to circle based on LSB values
+	_adc_circle_scaling			  = _adc_circle_scaling * 0.5f;	
+	float avg_scale   = (_adc_circle_scaling.x + _adc_circle_scaling.y + _adc_circle_scaling.z) / 3;
 	
-	float x_scale     = avg_scale / scaling.x;
-	float y_scale     = avg_scale / scaling.y;
-	float z_scale     = avg_scale / scaling.z;
+	float x_scale     = avg_scale / _adc_circle_scaling.x;
+	float y_scale     = avg_scale / _adc_circle_scaling.y;
+	float z_scale     = avg_scale / _adc_circle_scaling.z;
 	
-	_mag_field.x 	  = (_raw_mag.x - offsets.x) * x_scale;
-	_mag_field.y 	  = (_raw_mag.y - offsets.y) * y_scale;
-	_mag_field.z	  = (_raw_mag.z - offsets.z) * z_scale;
+	_mag_field.x 	  = (_mag_adc.x - _adc_offsets.x) * mag_scale_xy  * x_scale ; // uT  [filtered and corrected]
+	_mag_field.y 	  = (_mag_adc.y - _adc_offsets.y) * mag_scale_xy  * y_scale ; // uT
+	_mag_field.z	  = (_mag_adc.z - _adc_offsets.z) * mag_scale_z   * z_scale ; // uT
 	
+	_raw_mag_field.x  = _raw_mag_adc.x * mag_scale_xy; // uT  							[not filtered or corrected]
+	_raw_mag_field.y  = _raw_mag_adc.y * mag_scale_xy; // uT
+	_raw_mag_field.z  = _raw_mag_adc.z * mag_scale_z;  // uT
+	
+	// _mag_field.print();
 	// Some Debug Prints
 	// _raw_mag.print(0);
 	// _raw_mag_adc.print(0);
 	// _mag_field.print(0);
 	
-	
 	_last_update_msec = millis();
 	
-	if(_raw_mag.is_zero())
+	if(_raw_mag_field.is_zero())
 	{
 		_have_compass = false;
 	}
@@ -83,12 +92,12 @@ void AP_Compass::update()
 
 vector3f AP_Compass::get_field()
 {
-	return _mag_field;
+	return _mag_field;     //also to log 
 }
 
 vector3f AP_Compass::raw_field()
 {
-	return _raw_mag;
+	return _raw_mag_field; //log or something
 }
 
 float AP_Compass::get_declination()
@@ -134,6 +143,9 @@ float AP_Compass::calculate_heading(const float &_roll, const float &_pitch)
 		  
 	// limit heading to +/- 180 degrees
 	Heading  = constrain_float(Heading, -M_PI, M_PI);
+	
+	//Serial.println(Heading * 180/M_PI);
+	
 	return Heading;	
 }
 
@@ -162,7 +174,7 @@ void  AP_Compass::setHil(const float &hilroll, const float &hilpitch, const floa
 	{
 		_update_msec  = _current_time;
 		_mag_field 	  = B_body; 			// GAUSS value
-		_raw_mag      = _mag_field * 1090;	// LSB   value refer to Default Gain of HMC5883
+		_raw_mag_field    = _mag_field * 1090;	// LSB   value refer to Default Gain of HMC5883 _raw_mag     
 		_last_update_msec = millis();
 	}
 }

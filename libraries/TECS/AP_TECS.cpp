@@ -365,7 +365,7 @@ AP_TECS::_update_energies(void)
    _SKE_dem = _TAS_dem_adj * _TAS_dem_adj * 0.5f;
        
    _SPEdot_dem = _hgt_rate_dem * gravity;
-   _SKEdot_dem = _TAS_rate_dem * _integ5_state; // this please
+   _SKEdot_dem = _TAS_rate_dem * _integ5_state; // this please - needs to be changed from this to x Vdesired
 	   
    // current estimated energies::  
    _SPE_est = _integ3_state * gravity;
