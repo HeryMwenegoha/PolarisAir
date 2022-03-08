@@ -1,0 +1,6 @@
+sdlib	KEYWORD1
+SD_Lib	KEYWORD1
+_AP_sd	LITERAL1
+initialise	KEYWORD2
+write	KEYWORD2
+readOpenLog	KEYWORD3
