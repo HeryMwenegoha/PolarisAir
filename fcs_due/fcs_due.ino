@@ -1,4 +1,4 @@
- //#include <mavlink.h>
+//#include <mavlink.h>
 /*
  * Author : Hery A Mwenegoha (C) 2014
  * Optimisations
@@ -10,7 +10,7 @@
  * 6. See Tiny EKF Implementation
  * 7. Migrate to STM32 Boards
  * Updates
- * 1. Moved Compass Update to a 10Hz Loop 
+ * 1. Moved  Update to a 10Hz Loop 
  */
 #define  CHARS_TABLE 1
 #include <AP_Parameters.h>
@@ -42,7 +42,7 @@ AP_Radio        AP_radio;
 AP_Airspeed     AP_airspeed(&(AP_params.ParameterStorage.list.arspdEnabled));
 AP_Baro         AP_baro;
 AP_GPS          AP_gps;
-AP_Sensors      AP_sensors; // carries IMU and Compass
+AP_Sensors      AP_sensors; // carries IMU and 
 AP_AHRS         AP_ahrs(&AP_airspeed, AP_gps, &AP_ins, &AP_compass, AP_baro); // GPS is passed by reference
 AP_WayPoint     AP_waypoint;
 AP_Program      AP_program(&AP_params, &AP_ahrs, &AP_gps, &AP_waypoint, /*&AP_tecs, &AP_l1, */&AP_radio);
@@ -56,8 +56,59 @@ uint32_t        blink_msec;
 byte            medium_loop_counter;
 #define         LEDPIN 12
 
+/*
+class Backend;
+
+class Frontend{
+  friend class Backend;
+  
+  public:
+  FrontEnd(){};
+
+  void add_Backend(Backend *ba){  
+  }
+};
+
+class Backend{
+  public:
+  void method();
+};
+
+
+class Sensor : public Backend
+{
+  private:
+  static Sensor *instance;  // Declare Singleton
+  float a;
+  float b;
+  float c;
+  float d;
+  float e;
+  float f;
+  Sensor(){};               // private constructor
+
+  public:
+  static Sensor* get_instance(){
+    if(!instance)
+      instance = new Sensor;// run constrctor
+    return instance;
+  }
+
+  void set_Data(){
+    this->a=this->b=this->c=this->d=this->e=this->f=0;
+  }
+};
+Sensor *Sensor::instance = NULL;
+
+Sensor *sensor = sensor->get_instance();
+
+Frontend frontend;
+*/
 void setup()
 { 
+  //sensor->set_Data();
+  //frontend.add_Backend(Sensor::get_instance());
+  
   // Initialise Serial and TWI Bus
   Serial.begin(57600);
   Wire.begin();
@@ -67,6 +118,7 @@ void setup()
   // set some pinModes
   pinMode(13, OUTPUT);
   pinMode(A0, INPUT); // Consider PULLUP - reduce noise
+  pinMode(LEDPIN, OUTPUT); // GREEN LED
 
   // Tell us that we have initialised
   Serial.println(F("BOOT"));
@@ -80,6 +132,10 @@ void setup()
   AP_baro.initialise();
   AP_airspeed.initialise();
   AP_program.initialise();
+
+  // subscribe backends : mounted sensors only
+  AP_ins.add_backend((&(*AP_FXAS21002::get_instance())));
+  AP_ins.add_backend((&(*AP_FXOS8700::get_instance())));
 
   mainloop_lastTime  = millis() - mainloop_rate;
   last_stream_usec   = micros();
@@ -96,9 +152,9 @@ void loop()
       Serial.print(F("Loop Speed Error: ")); 
       Serial.println(Gdt);
     }
-    fast_loop();
-    medium_loop();
-    blink_led();
+    fast_loop();   // 50Hz
+    medium_loop(); // 10Hz
+    blink_led();  
   }
 }
 
@@ -125,13 +181,17 @@ void precise_timing_loop()
 
 void fast_loop()
 { 
+  //Serial.println(4e-1f);
   // Get backend object and update front end objects
   AP_sensors.update();
 
   // Process Front end imu raw values into proper scaled imu values (rotation rate and accelerations)
   AP_ins.update();
 
-  // Perform GPS based direct cosine matrix calculations with scaled compass and imu readings to get euler angles
+  // Process Front end mag raw values 
+  AP_compass.update();
+
+  // Perform GPS based direct cosine matrix calculations with scaled  and imu readings to get euler angles
   AP_ahrs.update();
 
   // Autopilot Programme
@@ -165,23 +225,21 @@ void medium_loop(){
 
     case 1:
       medium_loop_counter++;
-      AP_compass.update();
+      //AP_compass.update();
       break;
-
+      
     case 2:
       medium_loop_counter++;
       break;
 
     case 3:
-      medium_loop_counter++;
-      //PRINTTABLN2(AP_airspeed.get_airspeed(), AP_airspeed.get_temperature())
+      medium_loop_counter++; //PRINTTABLN2(AP_airspeed.get_airspeed(), AP_airspeed.get_temperature())
       break;
 
     case 4:
       medium_loop_counter = 0;
-      AP_baro.update();
-      //PRINTTAB(AP_ahrs.groundspeed_vector().length());      
-      //PRINTLN(AP_ahrs.airspeed_estimate());
+      AP_baro.update(); //PRINTTAB(AP_ahrs.groundspeed_vector().length()); //PRINTLN(AP_ahrs.airspeed_estimate());
+      //Serial.print(AP_baro.get_altitude());Serial.print(F("\t")); Serial.println(AP_baro.get_timeStamp());
       break;
   }
 }
@@ -219,7 +277,8 @@ void blinker (uint16_t time_delay){
   if((now - blink_msec) >= time_delay){
      blink_msec  = now;
      led_state   = !led_state;
-     led_state == true ? analogWrite(LEDPIN, 220) : analogWrite(LEDPIN, 0);
+     led_state == true ? digitalWrite(LEDPIN, 1)  : digitalWrite(LEDPIN, 0); 
+     //led_state == true ? analogWrite(LEDPIN, 220) : analogWrite(LEDPIN, 0);
   }  
 }
 
@@ -230,9 +289,9 @@ void print_airspeed(){
 void print_gps_time(){
   #if PRINT 
   PRINT(AP_gps.hours());
-  PRINT("   ");
+  PRINT(F("   "));
   PRINT(AP_gps.minutes());
-  PRINT("   ");
+  PRINT(F("   "));
   PRINTLN(AP_gps.seconds());
   #endif
 }
@@ -240,7 +299,7 @@ void print_gps_time(){
 void print_tecs(){
   #if PRINT // only prints if tecs update_pitch_throttle is running.
   PRINT(AP_ahrs.altitude_estimate());
-  PRINT("   ");
+  PRINT(F("   "));
   PRINTLN(AP_program.filtered.altitude);
   #endif
 }
@@ -260,15 +319,15 @@ void print_radio(){
 
 void print_euler(){
   PRINT(ToDeg(AP_ahrs.roll));
-  PRINT("  ");
+  PRINT(F("  "));
   PRINT(ToDeg(AP_ahrs.pitch));
-  PRINT("  ");
+  PRINT(F("  "));
   PRINT(ToDeg(AP_ahrs.yaw));
-  PRINT("  ");
+  PRINT(F("  "));
   PRINT(ToDeg(AP_ahrs.rollrate));
-  PRINT("  ");
+  PRINT(F("  "));
   PRINT(ToDeg(AP_ahrs.pitchrate));
-  PRINT("  "); 
+  PRINT(F("  ")); 
   PRINTLN(ToDeg(AP_ahrs.yawrate)); 
 }
 

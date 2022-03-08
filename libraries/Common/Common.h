@@ -13,18 +13,28 @@
 /* In the Update Function of Each Sensor, Use the Instance in the Enum Below */
 /* Changing the order of the enum changes */
 #define I2CSPEED 100000
+
 enum Sens
 {
 	L3Gd20 = 0,
 	MPU6000,
 	L3Gd20H,
+	FXAS21002
 };
 
+enum Accel
+{
+	LSM303A = 0,
+	MPU6000A,
+	L3Gd20HA,
+	FXOS8700A
+};
 
 enum Compass{
 	LSM303D = 0,
 	HMC5883,
-	AK8963
+	AK8963,
+	FXOS8700
 };
 
 /* Follows the mavlink MAV_CMD enum and therefore command can be used directly

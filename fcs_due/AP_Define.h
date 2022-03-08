@@ -1,7 +1,7 @@
 #pragma once
 #include "Arduino.h"
 
-#define HIL_SIM         1
+#define HIL_SIM         0
 #define mainloop_rate   20
 #define UAV             1     
 #define GCS             255  // Ground Control Station
@@ -21,10 +21,10 @@ typedef long i32;
 typedef unsigned long u32;
 
 //static  constexpr uint8_t UAV_ID  = 1;     // Manually Set So that GCS only transmits and receives to this UAV ID
-static  boolean SEND_MAV_DATA       = false;     // Set False to Stop MAV from sending messages before parameters are sent, making sure the serialport is free
+static  boolean SEND_MAV_DATA       = false; // Set False to Stop MAV from sending messages before parameters are sent, making sure the serialport is free
 
 static uint32_t mainloop_lastTime  = 0;
-static uint32_t loop_lapse_time    = 0;     // current time elapsed since start of void loop...
+static uint32_t loop_lapse_time    = 0;      // current time elapsed since start of void loop...
 byte            led_counter = 0;
 
 

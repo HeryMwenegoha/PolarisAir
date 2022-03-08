@@ -35,7 +35,7 @@ GPSUBX::GPSUBX(){
 uint8_t GPSUBX::GET_LENGTH(uint8_t class_id, uint8_t msg_id)
 {
 	// Just extend the message fields to receive other navigation messages
-	if(class_id == 0x01)
+	if(class_id == 0x01) // NAVIGATION MESSAGES
 	{
 		switch(msg_id)
 		{
@@ -60,7 +60,7 @@ uint8_t GPSUBX::GET_LENGTH(uint8_t class_id, uint8_t msg_id)
 			return 18;
 		}
 	}
-	else if(class_id == 0x06)
+	else if(class_id == 0x06) // CONFIGURATION MESSAGES
 	{
 		switch(msg_id)
 		{
@@ -77,9 +77,23 @@ uint8_t GPSUBX::GET_LENGTH(uint8_t class_id, uint8_t msg_id)
 			return 3;
 			
 		}
+	}	
+	else if(class_id == 0x02) // RAW MEASUREMENT MESSAGES
+	{
+		switch(msg_id)
+		{
+			case 0x10:
+			SENTENCE_TYPE = RXM_RAW;  // Not working on the 5H
+			return 8+24*UBX.numSV;    // no very effecient - find a better way.
+			
+		}		
 	}
+	
 }
 
+// buffer1 - buffer to populate_buffer
+// buffer2 - buffer holding data
+// len 	   - Full length of data [Bytes = 8 + PAX]
 void GPSUBX::populate_buffer(byte *buffer1, byte *buffer2, uint8_t len)
 {
 	for(int i = 6; i < (len-2); i++)
@@ -88,6 +102,59 @@ void GPSUBX::populate_buffer(byte *buffer1, byte *buffer2, uint8_t len)
 	}
 }
 
+
+void GPSUBX::populate_rxm_buffer(byte *buffer2, uint8_t numSV)
+{
+	
+	struct rxm_raw_t{
+		int64_t cpMes;   // Carrier Phase Measurement [L1 Cycles]
+		int64_t prMes;   // Pseudorange Measurement [m]
+		float   doMes;   // Doppler Measurement [Hz]
+		uint8_t sv;   	 // Space Vehicle Number [units]
+		int8_t  mesQI; 	 // nav measurment quality indicator [>=4 : PR+DO OK] [>=5: PR+DO+CP OK] [<6: Likely loss of carrier block in previous interval]
+		int8_t  cno; 	 // signal strength C/No. [dbHz]
+		uint8_t lli; 	 // loss of lock indicator [RINEX definition]	
+		};
+
+	union _rxm_raw {
+		struct rxm_raw_t packet;
+		byte buffer[sizeof(rxm_raw_t)];
+	};
+	
+	_rxm_raw rxm_raw[numSV]; // to space vehicle number ...
+	
+	for(int nsv = 0; nsv<numSV; nsv++)
+	{
+		for(int i = 0; i < 24; i++)
+		{
+			rxm_raw[nsv].buffer[i] = buffer2[(6+8) + 24*nsv + i];	
+		}
+	}
+	
+	// UBX RXM MEASUREMENT
+	/*
+	Serial.println("RXM-MEAS");
+	for(int nsv = 0; nsv<numSV; nsv++)
+	{
+		Serial.print(static_cast<float>(rxm_raw[nsv].packet.cpMes));
+		Serial.print("/t");
+		Serial.print(static_cast<float>(rxm_raw[nsv].packet.prMes));
+		Serial.print("/t");
+		Serial.print(rxm_raw[nsv].packet.doMes);
+		Serial.print("/t");
+		Serial.print(rxm_raw[nsv].packet.sv);
+		Serial.print("/t");
+		Serial.print(rxm_raw[nsv].packet.cno);
+		Serial.print("/t");
+		Serial.println(rxm_raw[nsv].packet.lli);
+	}
+	*/
+}
+
+
+
+// buffer  - buffer with information
+// len 	   - Full length of data [Bytes = 8 + PAX]
 void GPSUBX::process_buffer(byte *buffer, uint8_t len)
 {
 	// start with fletcher checksum calculation..
@@ -246,6 +313,11 @@ void GPSUBX::process_buffer(byte *buffer, uint8_t len)
 			}
 			break;
 			
+			case RXM_RAW:
+			{								
+				populate_rxm_buffer(buffer, UBX.numSV);				
+			}
+			
 		}
 	}
 }
@@ -284,7 +356,7 @@ void GPSUBX::UBX_decode(uint8_t read_byte, byte *buffer)
 			
 			uint8_t class_id  = buffer[2];
 			uint8_t msg_id    = buffer[3];
-			
+						
 			bool MATCH = GET_LENGTH(class_id, msg_id) == _I16.value;
 			
 			if(MATCH)

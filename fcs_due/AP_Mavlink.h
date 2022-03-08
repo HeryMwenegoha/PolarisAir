@@ -65,6 +65,7 @@ class AP_Mavlink
               }
               break;
 
+            // RECEIVE MAV_CMD MESSAGE DIRECTED TO THIS UAV
             case MAVLINK_MSG_ID_COMMAND_LONG:{
                 if((mavlink_msg_command_long_get_target_system(&msg) == UAV) &&
                    (mavlink_msg_command_long_get_target_component(&msg) == MAV_COMP_ID_SYSTEM_CONTROL)){
@@ -99,11 +100,32 @@ class AP_Mavlink
                         }
                         break;
 
+
                       case MAV_CMD_MISSION_START:{
                         _AP_program.Mission_Start();
                         send_command_ack((uint16_t)MAV_CMD_MISSION_START, (uint8_t)MAV_RESULT_ACCEPTED);
                         }
                         break;
+
+
+                       case MAV_CMD_DO_SET_MODE:{
+                          /*
+                          MAV_CMD_DO_SET_MODE  Set system mode.
+                          Mission Param #1  Mode, as defined by ENUM MAV_MODE
+                          Mission Param #2  Custom mode - this is system specific, please refer to the individual autopilot specifications for details.
+                          Mission Param #3  Custom sub mode - this is system specific, please refer to the individual autopilot specifications for details.
+                          Mission Param #4  Empty
+                          Mission Param #5  Empty
+                          Mission Param #6  Empty
+                          Mission Param #7  Empty
+                          */
+                          if(mavlink_msg_command_long_get_param1(&msg) == MAV_MODE_AUTO_ARMED)
+                            _AP_program.CMD_ModeChange(1150);
+                          else if(mavlink_msg_command_long_get_param1(&msg) == MAV_MODE_STABILIZE_ARMED)
+                            _AP_program.CMD_ModeChange(1500);
+                          else if(mavlink_msg_command_long_get_param1(&msg) == MAV_MODE_MANUAL_ARMED)
+                            _AP_program.CMD_ModeChange(1800);
+                        }
                         
                       }
                    }

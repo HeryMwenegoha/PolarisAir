@@ -6,13 +6,13 @@
 class AP_INS_Backend;
 class AP_INS_Backend2;
 
-class AP_INS
+class AP_INS2
 {
 	friend class AP_INS_Backend;
 	friend class AP_INS_Backend2;
 	
 	public:
-	AP_INS():
+	AP_INS2():
 	_hil_mode(false),
 	_have_ins(false),
 	_calibrated(false),
@@ -42,12 +42,6 @@ class AP_INS
 			_new_gyro_data[i] = false;
 			_new_accel_data[i] = false;
 		}
-		
-		// select gyro
-		//accel_sensor = FXOS8700;
-		//gyro_sensor  = FXAS21002;
-		
-		
 		#if VERSION0bbb
 		_low_pass_cutoff_gyro  = 50;  // Used to be 50Hz
 		_low_pass_cutoff_accel = 10;  // Used to be 10Hz	
@@ -56,10 +50,10 @@ class AP_INS
 		_low_pass_cutoff_gyro  = 20;  // Used to be 50Hz - Ardupilot uses 20Hz for gyro filter
 		_low_pass_cutoff_accel = 7;   // Used to be 10Hz - Ardupilot Uses 10Hz for accel filter
 		#endif
-		instances 			   = 0;
+		instance 			   = 0;
 	}
 	
-	void	  update();	
+	void	 update();	
 	vector3f* gyro();
 	vector3f* accel();
 	vector3f* raw_gyro();
@@ -78,11 +72,8 @@ class AP_INS
 	
 	vector3f _gyro_[3];  // ADC -> back-end data
 	vector3f _accel_[3]; // ADC -> back-end data
-	bool     _gyro_health_count[3];
-	bool     _accel_health_count[3];
-	
-		
-	void    add_backend(AP_INS_Backend2 *);
+	bool    _gyro_health_count[3];
+	bool    _accel_health_count[3];
 	
 	protected:
 	AP_Storage *_parameters;
@@ -115,11 +106,8 @@ class AP_INS
 	vector3f _offset_initial[3];
 	uint32_t _last_update_msec;
 	
-	//uint8_t accel_sensor;
-	//uint8_t gyro_sensor;
+	AP_INS_Backend *_backends[3];
+	uint8_t instance;
 	
-	AP_INS_Backend2 *_backends[3];
-	uint8_t instances;
+	void add_backend(AP_INS_Backend *);
 };
-
-extern  AP_INS      AP_ins;

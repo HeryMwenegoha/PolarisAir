@@ -220,7 +220,7 @@ void AP_L3GD20H::accumulate()
 			uint32_t _start_msec = millis();
 			while(Wire.available() < 6){
 				if((millis() - _start_msec) >= 50){
-					Serial.println("L3GD20-G	I2C	Timeout");
+					Serial.println(F("L3GD20-G	I2C	Timeout"));
 					return;
 				}
 			}

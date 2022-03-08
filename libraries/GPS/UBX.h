@@ -25,7 +25,7 @@
 #define UBX_h
 #include "AHRS.h"
 
-#define UBX_BUFFER_SIZE 255  
+#define UBX_BUFFER_SIZE 496  // was 255 ...  496 should be able to process data from 20 satellites at a time
 
 // defining sentences
 #define NAV_POSLLH    0		
@@ -33,16 +33,21 @@
 #define NAV_VELNED 	  2
 #define NAV_SOL	 	  3
 #define NAV_DOP		  4
+
 #define CFG_PRT_UART  5
 #define CFG_RATE_MEAS 6
 #define CFG_MSG_RATE  7
-#define OTHER_UBX    255
+
+#define  RXM_RAW      20 
+
+#define OTHER_UBX    255 
 
 // message rates
 class GPSUBX
 {
 	public:
 	GPSUBX();
+	~GPSUBX(){}; // [NEW] deconstructor..
 	bool initialise(HardwareSerial *Port);	
 	bool initialise(HardwareSerial *Port, uint32_t baud);
 	bool process_stream(void);
@@ -102,6 +107,9 @@ class GPSUBX
 	void UBX_decode(uint8_t read_byte, byte *buffer);
 	void process_buffer(byte *buffer, uint8_t len);
 	void populate_buffer(byte *buffer1, byte *buffer2, uint8_t len);
+	
+	void populate_rxm_buffer(byte *buffer2, uint8_t numSV);
+	
 	uint8_t GET_LENGTH(uint8_t class_id, uint8_t msg_id);
 	
 	bool _byPass_Header;	

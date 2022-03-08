@@ -5,7 +5,8 @@
  Issues		:	BMP180 Temperature measures 30+degrees even when the ambient isnt, therefore i should consider replacing
 				my altitude estimations with an external temperature estimate.
  */
-#include "BMP180.h"
+//#include "BMP180.h"
+#include "BMP388.h"
 class AP_Baro
 {
 	public:
@@ -19,16 +20,17 @@ class AP_Baro
 		
 	{
 		_hil_msec = 0;
-		_last_read_usec = 0;
-		_read_usec = 0; 		
+		//_last_read_usec = 0;
+		//_read_usec = 0; 		
 	}
 	void initialise();
 	void read();  	 	// 50Hz
 	void update(); 		// 10Hz
 	
-	float get_altitude(); 		// metres
-	float get_pressure(); 		// mb
-	float get_temperature();	// Celsius
+	float 	 get_altitude(); 		// metres
+	float 	 get_pressure(); 	    // mb
+	float 	 get_temperature();		// Celsius
+	uint32_t get_timeStamp(); 	    // msec
 	
 	void  setHil(float);
 	bool  have_sens();
@@ -36,16 +38,19 @@ class AP_Baro
 	
 	protected:
 	float _altitude, temp, press;
-	float _last_temperature;
-	float _last_pressure;
+	uint32_t _timeStamp_msec;
+	//float _last_temperature;
+	//float _last_pressure;
 	
 	private:
 	bool _hil_mode;
 	bool _have_sens;
 	bool _healthy;
 	uint32_t _hil_msec;
-	SFE_BMP180	_bmp180;
-	uint64_t _last_read_usec;
+	//SFE_BMP180	_bmp180;
+	AP_BMP388	_bmp388;
 	
-	uint64_t _read_usec;
+	//uint64_t _last_read_usec;
+	
+	//uint64_t _read_usec;
 };
